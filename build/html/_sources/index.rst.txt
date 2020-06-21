@@ -10,10 +10,4 @@ Welcome to yaqin-note's documentation!
    :maxdepth: 2
 
 
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+I love mingming
