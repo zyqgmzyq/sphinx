@@ -3,11 +3,11 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to yaqin-note's documentation!
+yaqin-note
 ======================================
 
 .. toctree::
    :maxdepth: 2
 
-
-I love mingming
+   /算法/算法_index.rst
+   test.md
