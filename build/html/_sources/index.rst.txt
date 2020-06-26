@@ -9,5 +9,4 @@ yaqin-note
 .. toctree::
    :maxdepth: 2
 
-   /算法/算法_index.rst
-   test.md
+   /algo/algo_index.rst

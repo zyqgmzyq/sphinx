@@ -9,4 +9,10 @@ Algorithm
 .. toctree::
    :maxdepth: 2
 
-   01-二分查找.md
+   01-几数之和.md
+   05-DFS和BFS.md
+..    02-二分查找.md
+..    03-排序算法.md
+..    04-回溯问题.md
+   
+
