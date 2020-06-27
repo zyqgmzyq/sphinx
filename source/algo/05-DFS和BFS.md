@@ -132,7 +132,7 @@ public:
 
 ## [2. leetcode-102 二叉树的层序遍历](https://leetcode-cn.com/problems/binary-tree-level-order-traversal/)    **
 
-## 题目描述
+### 题目描述
 
 给你一个二叉树，请你返回其按 **层序遍历** 得到的节点值。 （即逐层地，从左到右访问所有节点）。
 
@@ -317,7 +317,7 @@ public:
 class Solution 
 {
 public:
-    int ladderLength(string beginWord, string endWord, vector<string>& wordList) 
+	int ladderLength(string beginWord, string endWord, vector<string>& wordList) 
 	{
 		unordered_set<string> hashset(wordList.begin(), wordList.end());
 		unordered_set<string> visited;
@@ -350,7 +350,7 @@ public:
 			ret++;
 		}
 		return 0;
-    }
+	}
 };
 ```
 
@@ -358,7 +358,7 @@ public:
 
 ### 解题思路二
 
-看看大佬们写的双向广度优先搜索，下次自己写肯定还是写不来。
+看看大佬们写的双向广度优先搜索，下次自己写肯定还是写不来。菜是原罪！！！
 
 
 
@@ -367,42 +367,42 @@ public:
 ```c++
 class Solution {
 public:
-    int ladderLength(string beginWord, string endWord, vector<string>& wordList) {
-        unordered_set<string> hashset(wordList.begin(), wordList.end());
-        if(hashset.count(endWord) == 0) {
-            return 0;
+	int ladderLength(string beginWord, string endWord, vector<string>& wordList) {
+		unordered_set<string> hashset(wordList.begin(), wordList.end());
+		if(hashset.count(endWord) == 0) {
+			return 0;
 		}
-        unordered_set<string> fowward = {beginWord};
-        unordered_set<string> backward = {endWord};
-        int length = beginWord.size(); 
-        int ret = 1;  
+		unordered_set<string> fowward = {beginWord};
+		unordered_set<string> backward = {endWord};
+		int length = beginWord.size(); 
+		int ret = 1;  
 
-        while(fowward.size() && backward.size()){
-            // 一种小的优化策略，每次都选小的set开始expand，并且把小的设为forward
-            if(fowward.size() > backward.size())
-                swap(fowward, backward);
+		while(fowward.size() && backward.size()){
+			// 一种小的优化策略，每次都选小的set开始expand，并且把小的设为forward
+			if(fowward.size() > backward.size())
+				swap(fowward, backward);
 
-            unordered_set<string> q;
-            for (auto c: fowward){
-                for(int i = 0; i < length; i++){
-                    char tmp = c[i];  // 记录一下，因为后面要变回来，类似回溯
-                    for(char character='a'; character <= 'z'; character++){ 
-                        c[i] = character;
-                        if(backward.count(c))  
-                            return ret + 1;
-                        if(!hashset.count(c))
-                            continue;  // 字典中不存在，continue
-                        q.insert(c);
-                        hashset.erase(c);
-                    }
-                    c[i] = tmp;
-                }
-            }
-            swap(q, fowward);
+			unordered_set<string> q;
+			for (auto c: fowward){
+				for(int i = 0; i < length; i++){
+					char tmp = c[i];  // 记录一下，因为后面要变回来，类似回溯
+					for(char character='a'; character <= 'z'; character++){ 
+						c[i] = character;
+						if(backward.count(c))  
+							return ret + 1;
+						if(!hashset.count(c))
+							continue;  // 字典中不存在，continue
+						q.insert(c);
+						hashset.erase(c);
+					}
+					c[i] = tmp;
+				}
+			}
+			swap(q, fowward);
 			ret++;
-        }
-        return 0;
-    }
+		}
+		return 0;
+	}
 };
 ```
 
@@ -424,17 +424,151 @@ public:
 
 
 
-### 解题思路
+### 解题思路一
+
+对每一个海洋进行广度优先搜索，超时 34/35，蠢兮兮才会写出这样的代码。。。。。。
 
 
 
-
-
-### 代码
+### 代码一
 
 ```c++
+class Solution 
+{
+public:
+	vector<int> dx = {-1, 1, 0, 0};
+	vector<int> dy = {0, 0, -1, 1};
+	static const int MAX_N = 105;
+	int m, n;
+	bool vis[MAX_N][MAX_N];
 
+	bool isValid(int x, int y) 
+	{
+		if (x < 0 || x >= m || y < 0 || y >= n) {
+			return false;
+		} 
+		return true;
+	}
+
+	int bfs(int x, int y, vector<vector<int>>& grid)
+	{
+		queue<vector<int>> que;
+		memset(vis, 0, sizeof vis);
+		que.push({x, y});
+		vis[x][y] = true;
+		int ret = 0;
+		while (!que.empty()) {
+			int num = que.size();
+			while (num--)
+			{
+				vector<int> indexs = que.front();
+				que.pop();
+				for (int j = 0; j < 4; j++) {
+					int index_x = indexs[0] + dx[j];
+					int index_y = indexs[1] + dy[j];
+					if (!isValid(index_x, index_y)) continue; 
+					if (!vis[index_x][index_y]) {
+						vis[index_x][index_y] = true;
+						que.push({index_x, index_y});
+						if (grid[index_x][index_y] == 1) {
+							return ret + 1;
+						}
+					}
+				}
+			}
+			ret++;
+		}
+		return -1;
+	}
+
+	int maxDistance(vector<vector<int>>& grid) 
+	{
+		int retVal = -1;
+		m = grid.size();
+		n = grid[0].size();
+		for (int i = 0; i < m; i++) {
+			for (int j = 0; j < n; j++) {
+				if (grid[i][j] == 0) {
+					retVal = max(retVal, bfs(i, j, grid));
+				}
+			}
+		}
+		return retVal;
+	}
+};
 ```
+
+
+
+
+
+### 解题思路二
+
+多源广度优先搜索，变换了一下思路，把陆地作为源点
+
+- 先遍历一遍矩阵，把所有陆地先放进队列中
+- 然后套模板二
+
+
+
+### 代码二
+
+```c++
+class Solution 
+{
+public:
+	vector<int> dx = {-1, 1, 0, 0};
+	vector<int> dy = {0, 0, -1, 1};
+	int m, n;
+	queue<vector<int>> que;
+
+	bool isValid(int x, int y) 
+	{
+		if (x < 0 || x >= m || y < 0 || y >= n) {
+			return false;
+		} 
+		return true;
+	}
+
+	int maxDistance(vector<vector<int>>& grid) 
+	{
+		m = grid.size();
+		n = grid[0].size();
+		for (int i = 0; i < m; i++) {
+			for (int j = 0; j < n; j++) {
+				if (grid[i][j] == 1) {
+					que.push({i, j});
+				}
+			}
+		}
+		if (que.empty() || que.size() == m * n) return -1;
+
+		int retVal = -1; // 由于BFS的第一层遍历是从陆地开始，因此遍历完第一层之后 retVal 应该是0
+		while (!que.empty()) {
+			int num = que.size();
+			while (num--)
+			{
+				vector<int> indexs = que.front();
+				que.pop();
+				for (int j = 0; j < 4; j++) {
+					int index_x = indexs[0] + dx[j];
+					int index_y = indexs[1] + dy[j];
+					if (!isValid(index_x, index_y) || grid[index_x][index_y] != 0) {
+						continue;
+ 					}
+					grid[index_x][index_y] = 2;
+					que.push({index_x, index_y});
+				}
+			}
+			retVal++;
+		}
+		// 最终走了多少层才把海洋遍历完
+		return retVal;
+	}
+};
+```
+
+
 
 
 
