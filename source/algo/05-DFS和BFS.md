@@ -128,8 +128,6 @@ public:
 };
 ```
 
-
-
 ## [2. leetcode-102 二叉树的层序遍历](https://leetcode-cn.com/problems/binary-tree-level-order-traversal/)    **
 
 ### 题目描述
@@ -146,13 +144,9 @@ public:
   [15,7]]
 ```
 
-
-
 ### 解题思路
 
 广度优先搜索
-
-
 
 ### 代码
 
@@ -725,7 +719,7 @@ bool DFS(Node cur, Node target){
 
 
 
-### 栈
+解题思路
 
 - 采用栈，遇到左括号压栈
 - 遇到右括号判断当前栈是否为空，为空返回false；不为空取栈顶元素，若与当前右括号不匹配返回false，否则继续循环；
@@ -821,6 +815,7 @@ public:
 
 给定一个包含了一些 0 和 1的非空二维数组 grid , 一个 岛屿 是由四个方向 (水平或垂直) 的 1 (代表土地) 构成的组合。你可以假设二维矩阵的四个边缘都被水包围着。找到给定的二维数组中最大的岛屿面积。(如果没有岛屿，则返回面积为0。)
 
+```
 [[0,0,1,0,0,0,0,1,0,0,0,0,0],
  [0,0,0,0,0,0,0,1,1,1,0,0,0],
  [0,1,1,0,1,0,0,0,0,0,0,0,0],
@@ -829,16 +824,21 @@ public:
  [0,0,0,0,0,0,0,0,0,0,1,0,0],
  [0,0,0,0,0,0,0,1,1,1,0,0,0],
  [0,0,0,0,0,0,0,1,1,0,0,0,0]]
+```
 
 对于上面这个给定矩阵应返回 `6`。注意答案不应该是11，因为岛屿只能包含水平或垂直的四个方向的‘1’。
 
-### 深度优先搜索
+
+
+### 解题思路
 
 - 我们想知道网格中每个连通形状的面积，然后取最大值。
-
 - 如果我们在一个土地上，以 4 个方向探索与之相连的每一个土地（以及与这些土地相连的土地），那么探索过的土地总数将是该连通形状的面积。
+- 为了确保每个土地访问不超过一次，我们每次经过一块土地时，将这块土地的值置为 2。这样我们就不会多次访问同一土地。
 
-- 为了确保每个土地访问不超过一次，我们每次经过一块土地时，将这块土地的值置为 0。这样我们就不会多次访问同一土地。
+
+
+### 代码
 
 ```c++
 class Solution {
@@ -863,6 +863,265 @@ class Solution {
                 if(grid[i][j]==1) ret = max(ret, dfs(grid, i, j));
             }
         }
+        return ret;
+    }
+};
+```
+
+
+
+## [4. leetcode-210 课程表 II](https://leetcode-cn.com/problems/course-schedule-ii/) **
+
+### 题目描述
+
+现在你总共有 n 门课需要选，记为 0 到 n-1。在选修某些课程之前需要一些先修课程。 例如，想要学习课程 0 ，你需要先完成课程 1 ，我们用一个匹配来表示他们: [0,1]，给定课程总量以及它们的先决条件，返回你为了学完所有课程所安排的学习顺序。可能会有多个正确的顺序，你只要返回一种就可以了。如果不可能完成所有课程，返回一个空数组。
+
+
+
+输入: 2, [[1,0]] 
+输出: [0,1]
+解释: 总共有 2 门课程。要学习课程 1，你需要先完成课程 0。因此，正确的课程顺序为 [0,1] 
+
+
+
+### 解题思路一
+
+对于图中的任意一个节点，它在搜索的过程中有三种状态，即：
+
+- 未搜索：我们还没有搜索到这个节点；
+
+- 搜索中：我们搜索过这个节点，但还没有回溯到该节点，即该节点还没有入栈，还有相邻的节点没有搜索完成）；
+
+- 已完成：我们搜索过并且回溯过这个节点，即该节点已经入栈，并且所有该节点的相邻节点都出现在栈的更底部的位置，满足拓扑排序的要求。
+
+通过上述的三种状态，我们就可以给出使用深度优先搜索得到拓扑排序的算法流程，在每一轮的搜索搜索开始时，我们任取一个「未搜索」的节点开始进行深度优先搜索。我们将当前搜索的节点 u 标记为「搜索中」，遍历该节点的每一个相邻节点 v：
+
+如果 v 为「未搜索」，那么我们开始搜索 v，待搜索完成回溯到 u；
+
+如果 v 为「搜索中」，那么我们就找到了图中的一个环，因此是不存在拓扑排序的；
+
+如果 v 为「已完成」，那么说明 v 已经在栈中了，而 u 还不在栈中，因此 u 无论何时入栈都不会影响到 (u,v) 之前的拓扑关系，以及不用进行任何操作。
+
+当 u 的所有相邻节点都为「已完成」时，我们将 u 放入栈中，并将其标记为「已完成」。
+
+在整个深度优先搜索的过程结束后，如果我们没有找到图中的环，那么栈中存储这所有的 n 个节点，从栈顶到栈底的顺序即为一种拓扑排序。
+
+
+
+### 代码一
+
+```c++
+class Solution 
+{
+public:
+    vector<vector<int>> edges;
+    vector<int> visited;
+    vector<int> ret;
+    bool isvalid = true;
+
+    void dfs(int index)
+    {
+        visited[index] = 1;
+        for (int i = 0; i < edges[index].size(); i++) {
+            int num = edges[index][i];
+            if (visited[num] == 0) {
+                dfs(num);
+                if (!isvalid) {
+                    return;
+                }
+            } else if (visited[num] == 1) {
+                isvalid = false;
+                return;
+            }
+        }
+        visited[index] = 2;
+        ret.push_back(index);
+    }
+
+    vector<int> findOrder(int numCourses, vector<vector<int>>& prerequisites) {
+        edges.resize(numCourses);
+        visited.resize(numCourses);
+        for (auto nums:prerequisites) {
+            edges[nums[1]].push_back(nums[0]);
+        }
+
+        for (int i = 0; i < numCourses && isvalid; i++) {
+            if (visited[i] == 0) {
+                dfs(i);
+            }
+        }
+
+        if (!isvalid) {
+            return {};
+        }
+        reverse(ret.begin(), ret.end());
+        
+        return ret;
+    }
+};
+```
+
+
+
+### 解题思路二
+
+我们使用一个队列来进行广度优先搜索。初始时，所有入度为 00 的节点都被放入队列中，它们就是可以作为拓扑排序最前面的节点，并且它们之间的相对顺序是无关紧要的。
+
+在广度优先搜索的每一步中，我们取出队首的节点 u：
+
+- 将 u 放入答案中；
+
+- 移除 u 的所有出边，也就是将 u 的所有相邻节点的入度减少 1。如果某个相邻节点 v 的入度变为 00，那么我们就将 v 放入队列中。
+
+- 在广度优先搜索的过程结束后。如果答案中包含了这 n 个节点，那么我们就找到了一种拓扑排序，否则说明图中存在环，也就不存在拓扑排序了。
+
+
+
+### 代码二
+
+```c++
+class Solution 
+{
+public:
+    vector<vector<int>> edges;
+    vector<int> inDegree; /*入度 */
+    vector<int> ret;
+    queue<int> que;
+
+    vector<int> findOrder(int numCourses, vector<vector<int>>& prerequisites) {
+        edges.resize(numCourses);
+        inDegree.resize(numCourses);
+        for (auto nums:prerequisites) {
+            edges[nums[1]].push_back(nums[0]);
+            inDegree[nums[0]]++;
+        }
+
+        for (int i = 0; i < numCourses; i++) {
+            if (inDegree[i] == 0) {
+                que.push(i);
+            }
+        }
+
+        while (!que.empty()) {
+            int num = que.front();
+            ret.push_back(num);
+            que.pop();
+            for (int i = 0; i < edges[num].size(); i++) {
+                inDegree[edges[num][i]]--;
+                if (inDegree[edges[num][i]] == 0) {
+                    que.push(edges[num][i]);
+                }
+            }
+        }
+
+        for (int i = 0; i < numCourses; i++) {
+            if (inDegree[i] != 0) {
+                return {};
+            }
+        }
+        
+        return ret;
+    }
+};
+```
+
+
+
+## [5. leetcode-417 太平洋大西洋水流问题](https://leetcode-cn.com/problems/pacific-atlantic-water-flow/)  **
+
+### 题目描述
+
+给定一个 m x n 的非负整数矩阵来表示一片大陆上各个单元格的高度。“太平洋”处于大陆的左边界和上边界，而“大西洋”处于大陆的右边界和下边界。规定水流只能按照上、下、左、右四个方向流动，且只能从高到低或者在同等高度上流动。请找出那些水流既可以流动到“太平洋”，又能流动到“大西洋”的陆地单元的坐标。
+
+ 
+
+提示：输出坐标的顺序不重要;m 和 n 都小于150
+
+
+
+给定下面的 5x5 矩阵:
+
+  太平洋 ~   ~   ~   ~   ~ 
+       ~  1   2   2   3  (5) *
+       ~  3   2   3  (4) (4) *
+       ~  2   4  (5)  3   1  *
+       ~ (6) (7)  1   4   5  *
+       ~ (5)  1   1   2   4  *
+          *   *   *   *   * 大西洋
+
+返回: [[0, 4], [1, 3], [1, 4], [2, 2], [3, 0], [3, 1], [4, 0]] (上图中带括号的单元).
+
+
+
+### 解题思路
+
+- 先找与太平洋联通的搜有点
+- 再找与大西洋联通的所有点
+- 最后取两个的交集
+
+### 代码
+
+```c++
+class Solution {
+public:
+    vector<vector<int>> ret;
+    vector<int> dx = {0, -1, 1, 0};
+    vector<int> dy = {-1, 0, 0, 1};
+
+    bool is_ok(int x, int y, int m ,int n)
+    {
+        if (x < 0 || y < 0 || x >= m || y >= n) {
+            return false;
+        }
+        return true;
+    }
+
+    void dfs(vector<vector<int>>& matrix, int x, int y, vector<vector<int>>& visited)
+    {
+        if (visited[x][y]) {
+            return;
+        }
+        visited[x][y] = 1;
+        int m = matrix.size();
+        int n = matrix[0].size();
+        
+        for (int i = 0; i < 4; i++) {
+            int indexx = x + dx[i];
+            int indexy = y + dy[i];
+            if (!is_ok(indexx, indexy, m, n) || matrix[indexx][indexy] < matrix[x][y]) {
+                continue;
+            }
+            dfs(matrix, indexx, indexy, visited);
+        }
+    }
+
+    vector<vector<int>> pacificAtlantic(vector<vector<int>>& matrix) {
+        int m = matrix.size();
+        if (m <= 0) {
+            return {};
+        }
+        int n = matrix[0].size();
+        vector<vector<int>>A(m,vector<int>(n));
+        vector<vector<int>>B(m,vector<int>(n));
+
+        for (int i = 0; i < m; i++) {
+            dfs(matrix, i, 0, A);    //寻找与太平洋左边界联通的点
+            dfs(matrix, i, n-1, B);  //寻找与大西洋右边界联通的点
+        }
+
+        for (int i = 0; i < n; i++) {
+            dfs(matrix, 0, i, A);     //寻找与太平洋上边界联通的点
+            dfs(matrix, m-1, i, B);   //寻找与大西洋下边界联通的点
+        }
+
+        for (int i = 0; i < m; i++) {
+            for (int j = 0; j < n; j++) {
+                if (A[i][j] && B[i][j]) {
+                    ret.push_back({i,j});
+                }
+            }
+        }
+
         return ret;
     }
 };
