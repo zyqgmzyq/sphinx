@@ -1,1 +1,1 @@
-[![Read Doc](https://media.ethicalads.io/media/images/2020/01/readthedocs-logo-fs8_k6Ps9wN.png)](https://yaqin-note.readthedocs.io/zh_CN/latest/#)
+[![Read Doc](https://img.shields.io/badge/read-doc-green.svg)](https://yaqin-note.readthedocs.io/zh_CN/latest/#)
