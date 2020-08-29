@@ -3,7 +3,7 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Algorithm
+Algo
 ======================================
 
 .. toctree::
@@ -13,4 +13,4 @@ Algorithm
    02-二分查找.md
    03-排序算法.md
    04-回溯问题.md
-   05-DFS和BFS.md 
+   05-DFS和BFS.md
