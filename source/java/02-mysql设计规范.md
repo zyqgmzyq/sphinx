@@ -193,7 +193,7 @@ INT UNSIGNED: 存储范围：0 to 4294967295 对应的时间范围：1970/1/1 8:
 
 ## 5 语句书写规范
 
-## 5.1 create table 语句
+### 5.1 create table 语句
 
 ```sql
 # 这是正确的语法示范
@@ -211,7 +211,7 @@ CREATE TABLE `User` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='天马物料表'
 ```
 
-## 5.2 alter table 语句
+### 5.2 alter table 语句
 
 #### 5.2.1 添加字段
 
