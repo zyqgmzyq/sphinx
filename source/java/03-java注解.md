@@ -436,7 +436,7 @@ public class IndexController extends BasicController {
 
 （不是必须，只是想增加异常处理的类，接口得到的返回结果更好看点）
 
-```javascript
+```java
 public class BasicController {
     @ExceptionHandler({IllegalArgumentException.class})
     public
