@@ -10,4 +10,3 @@ Note
    :maxdepth: 2
 
    /algo/algo_index.rst
-   /java/java_index.rst
