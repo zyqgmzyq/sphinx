@@ -1127,3 +1127,75 @@ public:
 };
 ```
 
+## [6. leetcode-37 解数独](https://leetcode-cn.com/problems/sudoku-solver)  ***
+
+### 题目描述
+编写一个程序，通过填充空格来解决数独问题。
+
+一个数独的解法需遵循如下规则：
+
+数字 1-9 在每一行只能出现一次。
+数字 1-9 在每一列只能出现一次。
+数字 1-9 在每一个以粗实线分隔的 3x3 宫内只能出现一次。
+空白格用 '.' 表示。
+
+### 解题思路
+[参考](https://leetcode-cn.com/problems/sudoku-solver/solution/37-jie-shu-du-hui-su-sou-suo-suan-fa-xiang-jie-by-/i)
+
+### 代码
+
+```c++
+class Solution {
+public:
+    void solveSudoku(vector<vector<char>> &board)
+    {
+        solvesudokuDFS(board, 0, 0);
+    }
+
+     bool solvesudokuDFS(vector<vector<char>> &board, int i, int j)
+    {
+        if (i == 9) {
+            return true;
+        }
+        if (j >= 9) {
+            return solvesudokuDFS(board, i + 1, 0);
+        }
+        if (board[i][j] == '.') {
+            for (int k = 1; k <= 9; ++k) {
+                board[i][j] = (char)k + '0';
+                if (isvalid(board, i, j)) {
+                    if (solvesudokuDFS(board, i, j + 1)) {
+                        return true;
+                    }
+                }
+                board[i][j] = '.';
+            }
+        } else {
+            return solvesudokuDFS(board, i, j + 1);
+        }
+        return false;
+    }
+
+    bool isvalid (vector<vector<char> >&board, int i, int j)
+    {
+        for (int col = 0; col < 9; ++col) {
+            if ((col != j) && (board[i][j] == board[i][col])) {
+                return false;
+            }
+        }
+        for (int row = 0; row < 9; ++row) {
+            if ((row != i) && (board[i][j] == board[row][j])) {
+                return false;
+            }
+        }
+        for (int l = i / 3 * 3; l < i / 3 * 3 + 3; ++l) {
+            for (int m = j / 3 * 3; m < j / 3 * 3 + 3; ++m) {
+                if ((l != i) && (m != j) && (board[i][j] == board[l][m])) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+};
+```
