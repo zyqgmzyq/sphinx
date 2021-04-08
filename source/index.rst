@@ -10,3 +10,4 @@ Note
    :maxdepth: 2
 
    /algo/algo_index.rst
+   /qemu/qemu.rst
