@@ -1,6 +1,6 @@
 # Qemu Debug
 
-#### 直接用gdb运行QEMU   
+## 直接用gdb运行QEMU   
 
 ```c
 gdb-multiarch -tui -args qemu-system-aarch64 -machine gic-version=3,iommu=smmuv3 -machine virtualization=true -cpu cortex-a72 -machine type=virt -m 3G -smp 8 -kernel Image -nographic -initrd rootfs.img.gz -append "rw root=/dev/ram rdinit=/sbin/init earlyprintk=serial,ttyAMA0 console=ttyAMA0"
