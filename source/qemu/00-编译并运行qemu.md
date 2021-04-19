@@ -18,13 +18,24 @@ make -j4 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu-
 ## Qemu拉起Linux
 
 ```shell
-qemu-system-aarch64 -machine its,gic-version=3,iommu=smmuv3,virtualization=true,type=virt -cpu cortex-a72 -m 4G -smp 8 -kernel Image -nographic -initrd rootfs.img.gz -append "rw root=/dev/ram rdinit=/sbin/init earlyprintk=serial,ttyAMA0 console=ttyAMA0"
+qemu-system-aarch64 -machine its,gic-version=3,iommu=smmuv3,virtualization=true,type=virt \
+-cpu cortex-a72 -m 4G -smp 8 \
+-kernel Image -nographic \
+-initrd rootfs.img.gz \
+-append "rw root=/dev/ram rdinit=/sbin/init earlyprintk=serial,ttyAMA0 console=ttyAMA0"
 ```
 
 增加虚拟设备磁盘，先使用initrd作为临时文件系统然后再mount磁盘
 
 ```shell
-qemu-system-aarch64 -machine gic-version=3,iommu=smmuv3 -machine virtualization=true -cpu cortex-a72 -machine type=virt -m 2048 -smp 8 -kernel Image -nographic -initrd rootfs.img.gz -append "rw root=/dev/ram rdinit=/sbin/init earlyprintk=serial,ttyAMA0 console=ttyAMA0" -drive file=sysDrv_rootfs.ext4,if=none,format=raw,id=hd0 -device virtio-blk-device,drive=hd
+qemu-system-aarch64 -machine gic-version=3,iommu=smmuv3 -machine virtualization=true \
+-cpu cortex-a72 -machine type=virt \
+-m 2048 -smp 8 \
+-kernel Image -nographic \
+-initrd rootfs.img.gz \
+-append "rw root=/dev/ram rdinit=/sbin/init earlyprintk=serial,ttyAMA0 console=ttyAMA0" \
+-drive file=sysDrv_rootfs.ext4,if=none,format=raw,id=hd0 \
+-device virtio-blk-device,drive=hd
 ```
 
 ## GDB调试kernel
@@ -39,7 +50,10 @@ target remote :1234
 ## 生成Qemu的dtb
 
 ```shell
-qemu-system-aarch64 -machine its,gic-version=3,iommu=smmuv3,virtualization=true,type=virt -cpu cortex-a72 -m 4G -smp 8 -display none -machine dumpdtb=virt-gicv3.dtb
+qemu-system-aarch64 -machine its,gic-version=3,iommu=smmuv3,virtualization=true,type=virt \
+-cpu cortex-a72 -m 4G -smp 8 \
+-display none \
+-machine dumpdtb=virt-gicv3.dtb
 ```
 
 ## 网络配置
