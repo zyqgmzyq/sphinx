@@ -11,4 +11,4 @@ Qemu
 
    00-编译并运行qemu.md
    01-qemu debug.md
-   
+   02-qemu-virtio-gpu.md
