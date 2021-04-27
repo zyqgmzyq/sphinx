@@ -97,8 +97,8 @@ qemu-system-aarch64 -m 1024 -cpu cortex-a72 -M virt  -nographic \
 ```shell
 lspci
 ```
+![image](https://user-images.githubusercontent.com/36949881/116170080-ac8f1f00-a738-11eb-9e59-29e183a4aa6f.png)
 
-![image-20210419121326531](02-qemu-virtio-gpu.assets/image-20210419121326531.png)
 
 ### 安装meson
 
