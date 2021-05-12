@@ -57,7 +57,7 @@ weston_compositor_create
     // 创建定时器事件，定时器触发compositor中的idle_handler
     wl_event_loop_add_timer(loop, idle_handler, ec)
     // 创建定时器事件，定时器触发compositor中的output_repaint_timer_handler
-	wl_event_loop_add_timer(loop, output_repaint_timer_handler,ec)
+    wl_event_loop_add_timer(loop, output_repaint_timer_handler,ec)
     // 初始化fade layer和cursor layer
     weston_layer_init
     // 设置fade layer和cursor layer的位置
@@ -80,8 +80,8 @@ load_backend
     	
     	// compositor加载backend
 		weston_compositor_load_backend
-    		weston_backend_init
-    			drm_backend_create
+    			weston_backend_init
+    				drm_backend_create
                                 
         // load remote output 如果没有remote-output  直接返回
 		load_remoting    
@@ -110,7 +110,7 @@ drm_backend_create(struct weston_compositor *compositor,
 			goto err_udev_dev;
 		}
 	}
-    b->base.destroy = drm_destroy;
+    	b->base.destroy = drm_destroy;
 	b->base.repaint_begin = drm_repaint_begin;
 	b->base.repaint_flush = drm_repaint_flush;
 	b->base.repaint_cancel = drm_repaint_cancel;
@@ -128,7 +128,7 @@ drm_backend_create(struct weston_compositor *compositor,
 
 ```c
 init_egl
-    // 创建gbm device
+    /* 创建gbm device  */
     b->gbm = create_gbm_device
         // 从gl-renderer.so加载gl_renderer
         gl_renderer = weston_load_module("gl-renderer.so", "gl_renderer_interface");
@@ -231,11 +231,11 @@ static int drm_output_enable(struct weston_output *base)
     // 设置start_repaint_loop接口
     output->base.start_repaint_loop = drm_output_start_repaint_loop;
     // 设置repaint接口，用于最终绘制
-	output->base.repaint = drm_output_repaint;
-	output->base.assign_planes = drm_assign_planes;
-	output->base.set_dpms = drm_set_dpms;
-	output->base.switch_mode = drm_output_switch_mode;
-	output->base.set_gamma = drm_output_set_gamma;
+    output->base.repaint = drm_output_repaint;
+    output->base.assign_planes = drm_assign_planes;
+    output->base.set_dpms = drm_set_dpms;
+    output->base.switch_mode = drm_output_switch_mode;
+    output->base.set_gamma = drm_output_set_gamma;
     
     .......
     return 0;
@@ -309,8 +309,8 @@ wl_client_create
     client->source = wl_event_loop_add_fd(display->loop, fd,
 					      WL_EVENT_READABLE,
 					      wl_client_connection_data, client);
-	// 将display与client对象进行绑定
-	bind_display(client, display) 
+    // 将display与client对象进行绑定
+    bind_display(client, display) 
 ```
 
  着重看下bind_display函数，它将display与client对象进行绑定，当client端有display相关请求时，会调用client中的相关回调。实现如下：
