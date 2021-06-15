@@ -4,6 +4,10 @@
 
 QEMU中使用了很多构造函数，这些构造函数会在执行main()函数之前就执行，初始化一些数据结构。module_init()就是典型代表。
 
+这个函数有两个版本的 define，一个版本适用于普通设备，一个版本适用于 DSO 设备，然后对应的 function 和 type，function 对应类型的初始化函数，type 的值为 MODULE_INIT_QOM。
+
+然后这里的 constructor 是编译器属性，编译器会把带有这个属性的函数 do_qemu_init_ ## function 放到特殊的段中，**带有这个属性的函数还会早于 main 函数执行**。
+
 参考： http://123.57.146.8/2020/10/05/QEMU%20KVM%20Note%20%E2%85%A2/
 
 ```shell
@@ -27,6 +31,9 @@ static void __attribute__((constructor)) do_qemu_init_ ## function(void)    \
     register_module_init(function, type);                                   \
 }
 #endif
+
+#define type_init(function) module_init(function, MODULE_INIT_QOM)
+type_init(machvirt_machine_init);
 ```
 
 ```c
@@ -44,10 +51,8 @@ static void init_lists(void)
     }
 
     QTAILQ_INIT(&dso_init_list);             // 在dso_init_last中把当前位置插入进去,最后形成这样的效果
-
     inited = 1;                              // 设置flag位,代表这个类型已经被注册过了
 }
-
 
 static ModuleTypeList *find_type(module_init_type type)
 {
@@ -71,7 +76,7 @@ void register_module_init(void (*fn)(void), module_init_type type)
 }
 ```
 
-module_init的作用就是指定function为type类型的init函数，这种挂接关系会存储在这个type的QTAIL链表中。（每种type有各自的一个链表，而不是所有type都在一个链表中）
+module_init的作用就是指定function为type类型的init函数，这种挂接关系会存储在这个type的QTAIL链表中。（每种type有各自的一个链表，而不是所有type都在一个链表中）。
 
 QTAIL链表的每一个节点node就记录了一种type和其init函数的挂接关系。
 
@@ -122,6 +127,96 @@ struct TypeImpl
     InterfaceImpl interfaces[MAX_INTERFACES];
 };
 ```
+
+
+
+# 附录：QTAILQ数据结构
+
+### HEAD
+
+```c
+/*
+ * Tail queue definitions.  The union acts as a poor man template, as if
+ * it were QTailQLink<type>.
+ */
+#define QTAILQ_HEAD(name, type)                                         \
+union name {                                                            \
+	struct type *tqh_first;       /* first element */               \
+	QTailQLink tqh_circ;          /* link for circular backwards list */ \  // 循环后向链表
+}
+
+typedef struct QTailQLink {
+    void *tql_next;
+    struct QTailQLink *tql_prev; 
+} QTailQLink;
+```
+
+HEAD 静态初始化
+
+```c
+#define QTAILQ_HEAD_INITIALIZER(head)             \ 
+	{ .tqh_circ = { NULL, &(head).tqh_circ } }
+```
+
+HEAD 动态初始化
+
+```c
+/*
+ * Tail queue functions.
+ */
+#define QTAILQ_INIT(head) do {                                          \
+        (head)->tqh_first = NULL;                                       \
+        (head)->tqh_circ.tql_prev = &(head)->tqh_circ;                  \
+} while (/*CONSTCOND*/0)
+```
+
+### ENTRY
+
+```
+#define QTAILQ_ENTRY(type)                                              \
+union {                                                                 \
+        struct type *tqe_next;        /* next element */                \
+        QTailQLink tqe_circ;          /* link for circular backwards list */ \
+}
+```
+
+tqe_next表示list entry next，tqe_circ表示list entry prev
+
+在head后面插入一个elm：
+
+```c
+#define QTAILQ_INSERT_HEAD(head, elm, field) do {                       \
+        if (((elm)->field.tqe_next = (head)->tqh_first) != NULL)        \
+            (head)->tqh_first->field.tqe_circ.tql_prev =                \
+                &(elm)->field.tqe_circ;                                 \
+        else                                                            \
+            (head)->tqh_circ.tql_prev = &(elm)->field.tqe_circ;         \
+        (head)->tqh_first = (elm);                                      \
+        (elm)->field.tqe_circ.tql_prev = &(head)->tqh_circ;             \
+} while (/*CONSTCOND*/0)
+    
+/* elm是包含entry的结构体，比如：*/
+
+typedef struct elm {
+    QLIST_ENTRY(type) field;
+    // other fields
+} elm;
+```
+
+看代码可能一时还搞不清楚，看下这张图就懂了，然后往head后面插入，或者前面插入或者删除都差不多。
+
+![image](https://user-images.githubusercontent.com/36949881/122063096-8c1f3f00-ce22-11eb-9833-328d095bcb0e.png)
+
+
+
+
+
+
+
+
+
+
+
 
 
 
