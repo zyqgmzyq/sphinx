@@ -1,4 +1,4 @@
-# aos waypipe
+# waypipe
 
 ### 挂载qcow2格式磁盘
 
