@@ -14,4 +14,5 @@ Qemu
    02-qemu-virtio-gpu.md
    03-waypipe.md
    module_init.md
+   qemu_init.md
 
