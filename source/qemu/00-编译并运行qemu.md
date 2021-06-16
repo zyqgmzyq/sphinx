@@ -126,7 +126,7 @@ insmod /lib/ethernet/intel/e1000/e1000.ko
 -object memory-backend-ram,id=mem0,size=2G -object memory-backend-ram,id=mem1,size=2G -numa node,memdev=mem0,cpus=0-3 -numa node,memdev=mem1,cpus=4-7
 ```
 
-### telnet端口
+## telnet端口
 
 ```
 -serial tcp::5000,server,nowait
