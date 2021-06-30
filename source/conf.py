@@ -16,9 +16,9 @@
 
 # -- Project information -----------------------------------------------------
 
-project = 'yaqin-note'
-copyright = '2020, yaqin'
-author = 'yaqin'
+project = 'fly-tiger'
+copyright = '2020, fly-tiger'
+author = 'fly-tiger'
 
 # The full version, including alpha/beta/rc tags
 release = '1.0'
