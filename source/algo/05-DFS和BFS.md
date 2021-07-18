@@ -1201,3 +1201,70 @@ public:
     }
 };
 ```
+
+## [7. leetcode-79 单词搜索](https://leetcode-cn.com/problems/word-search/)  **
+
+### 题目描述
+给定一个 m x n 二维字符网格 board 和一个字符串单词 word 。如果 word 存在于网格中，返回 true ；否则，返回 false 。
+
+单词必须按照字母顺序，通过相邻的单元格内的字母构成，其中“相邻”单元格是那些水平相邻或垂直相邻的单元格。同一个单元格内的字母不允许被重复使用。
+![image](https://user-images.githubusercontent.com/36949881/126058030-3134a6ca-2555-45cb-b50f-5d36bfd63d01.png)
+
+ 
+
+### 解题思路
+dfs+回溯
+
+### 代码
+
+```c++
+class Solution {
+public:
+    int m;
+    int n;
+    int dx[4] = {1,-1,0,0};
+    int dy[4] = {0,0,1,-1};
+
+    bool dfs(vector<vector<int>> &visited, vector<vector<char>> &board, string word, int index, int i, int j) {
+        if ((index + 1) == word.size()) {
+            return true;
+        }
+        if (board[i][j] != word[index]) {
+            return false;
+        }
+        visited[i][j] = 1;
+        for (int k = 0; k < 4; k++) {
+            int x = i + dx[k];
+            int y = j + dy[k];
+            if ((x < 0) || (x >= m) || (y < 0) || (y >= n) || (board[x][y] != word[index + 1]) || (visited[x][y])) {
+                continue;
+            }
+            bool ret = dfs(visited, board, word, index + 1, x, y);
+            if (ret) {
+                return true;
+            }
+        }
+        visited[i][j] = 0;
+        return false;
+    }
+
+    bool exist(vector<vector<char>>& board, string word) {
+        bool ans = false;
+        m = board.size();
+        n = board[0].size();
+        vector<vector<int>> visited(m, vector<int>(n));
+        for (int i = 0; i < m; i++) {
+            for (int j = 0; j < n; j++) {
+                if (board[i][j] == word[0]) {
+                    ans = dfs(visited, board, word, 0, i, j);
+                    if (ans) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+};
+```
+
