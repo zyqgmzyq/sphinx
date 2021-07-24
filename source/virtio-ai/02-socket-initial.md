@@ -1,4 +1,5 @@
 # socket 文件系统的初始化
+![image-20210714145849000](https://user-images.githubusercontent.com/36949881/126860308-cbcf5f74-e9b8-44be-a838-a3af9134c2cf.png)
 
 一切从 net/socket.c 文件中的以下这行代码开始
 
