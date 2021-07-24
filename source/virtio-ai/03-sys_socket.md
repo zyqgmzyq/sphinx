@@ -1,6 +1,6 @@
 # socket
+![image](https://user-images.githubusercontent.com/36949881/126860285-5378a6be-0cac-4409-8565-5e5b6d3909c4.png)
 
-![image-20210715102744037](03-sys_socket.assets/image-20210715102744037.png)
 
 ## socket函数
 
