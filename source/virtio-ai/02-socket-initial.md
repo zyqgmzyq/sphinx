@@ -1,5 +1,4 @@
 # socket 文件系统的初始化
-![image-20210714145849000](https://user-images.githubusercontent.com/36949881/126860308-cbcf5f74-e9b8-44be-a838-a3af9134c2cf.png)
 
 一切从 net/socket.c 文件中的以下这行代码开始
 
@@ -42,7 +41,7 @@ static struct file_system_type sock_fs_type = {
 
 `kern_mount` 函数首先创建一个 `vfsmount`，然后调用的是 `file_system_type` 的 `mount` 函数来得到文件系统的 `super block` 并进行初始化， 
 
-
+![image-20210714145849000](https://user-images.githubusercontent.com/36949881/126860308-cbcf5f74-e9b8-44be-a838-a3af9134c2cf.png)
 最后用初始化过后的 `super block` 设置 `vfsmount` 中的参数，从上面的 `sock_fs_type` 的定义我们可以看出，对于 socket 文件系统来说 `mount` 是 `sockfs_mount`，而 `sockfs_mount` 最终调用了 `mount_pseudo_xattr` 这个函数。 `mount_pseudo_xattr` 主要完成了下面几件事情：
 
 1. 调用 sget_userns为 socket 文件系统创建一个新的`super block`。 sget 则是通过调用 `alloc_super` 分配空间。
