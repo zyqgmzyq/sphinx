@@ -1,6 +1,7 @@
 # connect
-![image](https://user-images.githubusercontent.com/36949881/127299502-c94cc334-f64e-4042-bcbd-748f65a8d536.png)
-![image](https://user-images.githubusercontent.com/36949881/127299527-17c40d66-4336-481d-8e76-07da9b44ec28.png)
+![](https://user-images.githubusercontent.com/36949881/127300439-f3dd17ee-57b0-4bec-82ab-9e2510b75653.png)
+![](https://user-images.githubusercontent.com/36949881/127300393-ae74d888-243e-4117-b63f-08b7c6670cf5.png)
+
 
 ## connect函数
 
