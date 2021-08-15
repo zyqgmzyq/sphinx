@@ -1267,4 +1267,79 @@ public:
     }
 };
 ```
+## [8. leetcode-5845 你能穿过矩阵的最后一天](https://leetcode-cn.com/contest/weekly-contest-254/problems/last-day-where-you-can-still-cross/)  **
+
+### 题目描述
+给你一个下标从 1 开始的二进制矩阵，其中 0 表示陆地，1 表示水域。同时给你 row 和 col 分别表示矩阵中行和列的数目。
+一开始在第 0 天，整个 矩阵都是 陆地 。但每一天都会有一块新陆地被 水 淹没变成水域。给你一个下标从 1 开始的二维数组 cells ，其中 cells[i] = [ri, ci] 表示在第 i 天，第 ri 行 ci 列（下标都是从 1 开始）的陆地会变成 水域 （也就是 0 变成 1 ）。
+你想知道从矩阵最 上面 一行走到最 下面 一行，且只经过陆地格子的 最后一天 是哪一天。你可以从最上面一行的 任意 格子出发，到达最下面一行的 任意 格子。你只能沿着 四个 基本方向移动（也就是上下左右）。
+请返回只经过陆地格子能从最 上面 一行走到最 下面 一行的 最后一天 。
+![image](https://user-images.githubusercontent.com/36949881/129468275-a60e53c1-b914-4fff-aa33-6f3edc922181.png)
+
+### 解题思路
+二分+dfs
+
+### 代码
+
+```c++
+class Solution {
+public:
+    int dx[4]={0,0,1,-1};
+    int dy[4]={1,-1,0,0};
+    bool dfs(int row,int col,int nowx,int nowy,vector<vector<int>>& land)
+    {
+        if(nowx==row-1)
+            return true;
+        
+        land[nowx][nowy]=1;
+        bool flag = false;
+        for(int i=0;i<4;i++)
+        {
+            int nextx = nowx+dx[i];
+            int nexty = nowy+dy[i];
+            if(nextx>=0&&nextx<row&&nexty>=0&&nexty<col&&land[nextx][nexty]==0)
+            {
+                flag|=dfs(row,col,nextx,nexty,land);
+                if(flag)
+                    return flag;
+            }
+        }
+        return flag;
+    }
+    bool solve(int mid,int row, int col, vector<vector<int>>& cells)
+    {
+        vector<vector<int>> land(row,vector<int>(col,0));
+        for(int i=0;i<mid;i++)
+            land[cells[i][0]-1][cells[i][1]-1]=1;
+        bool flag = false;
+        for(int i=0;i<col;i++)
+        {
+            if(land[0][i]==0)
+            flag |= dfs(row,col,0,i,land);
+            if(flag)
+                return flag;
+        }
+        return flag;
+    }
+    int latestDayToCross(int row, int col, vector<vector<int>>& cells) {
+        int l = 0;
+        int r = row*col-1;
+        int ans = 0;
+        while(l<=r)
+        {
+            int mid = (l+r)>>1;
+            if(solve(mid,row,col,cells))
+            {
+                ans = mid;
+                l=mid+1;
+            }else
+            {
+                r= mid-1;
+            }
+        }
+        return ans;
+    }
+};
+
+```
 
