@@ -130,7 +130,7 @@ struct TypeImpl
 
 
 
-# 附录：QTAILQ数据结构
+## 附录：QTAILQ数据结构
 
 ### HEAD
 
