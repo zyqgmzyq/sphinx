@@ -119,7 +119,6 @@ CONFIG_VIRTIO_CAN=y
 
 ## QEMU VIRTIO-CAN DEVICE初始化
 
-![image-20210701110702168](01-virtio-can.assets/image-20210701110702168.png)
 
 1. Qemu中设备模拟通过`type_init`先编译进系统，在`module_call_init`时进行回调，比如virtio_register_type
 
@@ -179,7 +178,7 @@ virtio_dev_probe
 			virtio_device_ready       /* enable vq use */
 ```
 
-![image](https://user-images.githubusercontent.com/36949881/142763760-ac6ea374-9f1f-4d2a-be55-1ac6d01a147f.png)
+![未命名图片](https://user-images.githubusercontent.com/36949881/142763992-0c75295a-ef00-4685-8cd9-2641a0d662cf.png)
 
 
 
