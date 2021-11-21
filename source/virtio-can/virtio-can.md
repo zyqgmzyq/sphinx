@@ -129,9 +129,10 @@ CONFIG_VIRTIO_CAN=y
 
 4. `device_init_func`根据Qemu命令的传入参数创建虚拟设备virtio-can
 
-    - 调用virtio_can_instance_init函数创建virtio can device设备；![image-20210626161906487](01-virtio-can.assets/image-20210626161906487.png)
-    
-    - 调用virtio_can_device_realize函数![image-20210626162441371](01-virtio-can.assets/image-20210626162441371.png)
+    - 调用virtio_can_instance_init函数创建virtio can device设备；
+    -     
+    - 调用virtio_can_device_realize函数
+    - 
     
     ```c
     static void virtio_can_device_realize(DeviceState *dev, Error **errp)
@@ -154,19 +155,17 @@ CONFIG_VIRTIO_CAN=y
 
 ### 数据结构
 
-![image-20210628101704217](01-virtio-can.assets/image-20210628101704217.png)
 
 ### virtio总线创建
 
-![image-20210628093051480](01-virtio-can.assets/image-20210628093051480.png)
 
 ### Driver Probe
 
-`bus_register`注册virtio总线，总线负责匹配；linux在init_call过程中会调用到virtio_can_driver_init函数注册virtio_can_driver,注册过程中总线会负责匹配；![image-20210628094651030](01-virtio-can.assets/image-20210628094651030.png)
+`bus_register`注册virtio总线，总线负责匹配；linux在init_call过程中会调用到virtio_can_driver_init函数注册virtio_can_driver,注册过程中总线会负责匹配；
+![image-20210628094651030](01-virtio-can.assets/image-20210628094651030.png)
 
 在匹配成功后调用通用的`virtio_dev_probe`函数；
 
-![image-20210628094821404](01-virtio-can.assets/image-20210628094821404.png)
 
 `virtio_dev_probe`函数里会去调用实际的probe函数
 
@@ -180,9 +179,7 @@ virtio_dev_probe
 			virtio_device_ready       /* enable vq use */
 ```
 
-![image-20210628104129037](01-virtio-can.assets/image-20210628104129037.png)
-
-
+![image](https://user-images.githubusercontent.com/36949881/142763760-ac6ea374-9f1f-4d2a-be55-1ac6d01a147f.png)
 
 
 
