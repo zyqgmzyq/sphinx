@@ -118,6 +118,7 @@ CONFIG_VIRTIO_CAN=y
 
 
 ## QEMU VIRTIO-CAN DEVICE初始化
+![未命名图片](https://user-images.githubusercontent.com/36949881/142764071-9859e6a8-900e-45af-8472-f858b147d1ac.png)
 
 
 1. Qemu中设备模拟通过`type_init`先编译进系统，在`module_call_init`时进行回调，比如virtio_register_type
@@ -128,10 +129,8 @@ CONFIG_VIRTIO_CAN=y
 
 4. `device_init_func`根据Qemu命令的传入参数创建虚拟设备virtio-can
 
-    - 调用virtio_can_instance_init函数创建virtio can device设备；
-    -     
-    - 调用virtio_can_device_realize函数
-    - 
+    - 调用virtio_can_instance_init函数创建virtio can device设备；  gdb  b virtio_can_instance_init
+    - 调用virtio_can_device_realize函数    gdb b virtio_can_device_realize
     
     ```c
     static void virtio_can_device_realize(DeviceState *dev, Error **errp)
@@ -153,13 +152,15 @@ CONFIG_VIRTIO_CAN=y
 ## Linux Driver 
 
 ### 数据结构
+![222](https://user-images.githubusercontent.com/36949881/142764220-b05ff544-594d-4893-937a-c94196afdbb0.png)
 
 
 ### virtio总线创建
+![333](https://user-images.githubusercontent.com/36949881/142764267-9fe64b37-05fc-424a-83de-f44e4de986b9.png)
 
 
 ### Driver Probe
-
+gdb b virtio_dev_match
 `bus_register`注册virtio总线，总线负责匹配；linux在init_call过程中会调用到virtio_can_driver_init函数注册virtio_can_driver,注册过程中总线会负责匹配；
 ![image-20210628094651030](01-virtio-can.assets/image-20210628094651030.png)
 
@@ -177,8 +178,7 @@ virtio_dev_probe
    			register_candev(dev);     /* 注册can设备 */
 			virtio_device_ready       /* enable vq use */
 ```
-
-![未命名图片](https://user-images.githubusercontent.com/36949881/142763992-0c75295a-ef00-4685-8cd9-2641a0d662cf.png)
+![image](https://user-images.githubusercontent.com/36949881/142764248-60f7996f-fd52-454f-ac24-ba9eb8ca26d7.png)
 
 
 
