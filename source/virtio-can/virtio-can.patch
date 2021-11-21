@@ -1,0 +1,385 @@
+ hw/net/can/virtio-can.c                     | 240 ++++++++++++++++++++
+ hw/virtio/virtio.c                          |   1 +
+ include/hw/virtio/virtio-can.h              |  40 ++++
+ include/standard-headers/linux/virtio_can.h |  53 +++++
+ include/standard-headers/linux/virtio_ids.h |   1 +
+ 5 files changed, 335 insertions(+)
+ create mode 100644 hw/net/can/virtio-can.c
+ create mode 100644 include/hw/virtio/virtio-can.h
+ create mode 100644 include/standard-headers/linux/virtio_can.h
+
+diff --git a/hw/net/can/virtio-can.c b/hw/net/can/virtio-can.c
+new file mode 100644
+index 0000000000..cdc4bb6b10
+--- /dev/null
++++ b/hw/net/can/virtio-can.c
+@@ -0,0 +1,240 @@
++/*
++ * Copyright (c) Huawei Technologies Co., Ltd. 2021-2021. All rights reserved.
++ * Description: virtio-can device
++ * Author: Zhu yaqin <zhuyaqin2@huawei.com>
++ * Create: 2021-06-26
++ * Notes:
++ */
++#include "qemu/osdep.h"
++#include "qemu/main-loop.h"
++#include "qemu/module.h"
++#include "hw/virtio/virtio.h"
++#include "qemu/error-report.h"
++#include "qemu/timer.h"
++#include "qemu/option.h"
++#include "qemu/option_int.h"
++#include "qemu/config-file.h"
++#include "qapi/qmp/qdict.h"
++#include "hw/virtio/virtio-can.h"
++#include "net/can_host.h"
++#include "net/announce.h"
++#include "hw/virtio/virtio-bus.h"
++#include "qapi/error.h"
++#include "standard-headers/linux/ethtool.h"
++#include "hw/qdev-properties.h"
++#include "trace.h"
++
++static Property virtio_can_properties[] = {
++    DEFINE_PROP_BIT64("ctrl_vq", VirtIOCan, host_features,
++                    VIRTIO_CAN_F_CTRL_VQ, true),
++    DEFINE_PROP_END_OF_LIST(),
++};
++
++static uint64_t virtio_can_get_features(VirtIODevice *vdev, uint64_t features,
++                                        Error **errp)
++{
++    VirtIOCan *vcan = VIRTIO_CAN(vdev);
++
++    /* Firstly sync all virtio-net possible supported features */
++    features |= vcan->host_features;
++    virtio_add_feature(&features, VIRTIO_CAN_F_CTRL_VQ);
++    return features;
++}
++
++static const VMStateDescription vmstate_virtio_can = {
++    .name = "virtio-can",
++    .minimum_version_id = 21,
++    .version_id = 21,
++    .fields = (VMStateField[]) {
++        VMSTATE_VIRTIO_DEVICE,
++        VMSTATE_END_OF_LIST()
++    },
++};
++
++static void buff2frame(struct virtio_can_config *config, qemu_can_frame *frame)
++{
++    uint8_t i;
++
++    frame->flags = 0;
++	frame->can_id = 0;
++    if (config->dlc & 0x40) { /* RTR */
++        frame->can_id = QEMU_CAN_RTR_FLAG;
++    }
++    frame->can_dlc = config->dlc & 0x0f;
++    frame->can_id |= config->can_id;
++    for (i = 0; i < frame->can_dlc; i++) {
++        frame->data[i] = config->tx_buff[i];
++    }
++    for (; i < 8; i++) {
++        frame->data[i] = 0;
++    }
++}
++
++static int virtio_can_handle_tx(VirtIODevice *vdev)
++{
++    VirtIOCan *vcan = VIRTIO_CAN(vdev);
++    qemu_can_frame   frame;
++    buff2frame(vdev->config, &frame);
++    can_bus_client_send(&vcan->bus_client, &frame, 1);
++    printf("===========--------virtio_can_handle_tx-----------======\n");
++    return VIRTIO_CAN_OK;
++}
++
++static void virtio_can_handle_ctrl(VirtIODevice *vdev, VirtQueue *vq)
++{
++    struct virtio_can_ctrl_hdr ctrl;
++    virtio_can_ctrl_ack status = VIRTIO_CAN_ERR;
++    VirtQueueElement *elem;
++    struct iovec *iov, *iov2;
++    size_t s;
++    unsigned int iov_cnt;
++
++    for (;;) {
++        elem = virtqueue_pop(vq, sizeof(VirtQueueElement));
++        if (!elem) {
++            break;
++        }
++        if (iov_size(elem->in_sg, elem->in_num) < sizeof(status) ||
++            iov_size(elem->out_sg, elem->out_num) < sizeof(ctrl)) {
++            virtio_error(vdev, "virtio-can ctrl missing headers");
++            virtqueue_detach_element(vq, elem, 0);
++            g_free(elem);
++            break;
++        }
++
++        iov_cnt = elem->out_num;
++        iov2 = iov = g_memdup(elem->out_sg, sizeof(struct iovec) * elem->out_num);
++        s = iov_to_buf(iov, iov_cnt, 0, &ctrl, sizeof(ctrl));
++        iov_discard_front(&iov, &iov_cnt, sizeof(ctrl));
++        if (s != sizeof(ctrl)) {
++            status = VIRTIO_CAN_ERR;
++        } else if (ctrl.class == VIRTIO_CAN_CTRL_TX) {
++            status = virtio_can_handle_tx(vdev);
++        } else {
++            status = VIRTIO_CAN_OK;
++        }
++
++        s = iov_from_buf(elem->in_sg, elem->in_num, 0, &status, sizeof(status));
++        assert(s == sizeof(status));
++
++        virtqueue_push(vq, elem, sizeof(status));
++        virtio_notify(vdev, vq);
++        g_free(iov2);
++        g_free(elem);
++    }
++    printf("============= virtio_can_handle_ctrl \n");
++}
++
++static void virtio_can_get_config(VirtIODevice *vdev, uint8_t *config)
++{
++    
++}
++
++static void frame2buff(const qemu_can_frame *frame, struct virtio_can_config *config)
++{
++    int i;
++    int dlen = frame->can_dlc;
++
++    config->dlc = 0x0f & frame->can_dlc;
++    config->can_id = frame->can_id;
++
++    for (i = 0; i < dlen; i++) {
++        config->rx_buff[i] = frame->data[i];
++    }
++}
++
++
++bool can_virtio_can_receive(CanBusClientState *client)
++{
++    return true; /* always return true, when operation mode */
++}
++
++ssize_t can_virtio_receive(CanBusClientState *client, const qemu_can_frame *frames,
++                        size_t frames_cnt)
++{
++    VirtIOCan *vcan = container_of(client, VirtIOCan, bus_client);
++    VirtIODevice *vdev = VIRTIO_DEVICE(vcan);
++    const qemu_can_frame *frame = frames;
++
++    if (frames_cnt <= 0) {
++        return 0;
++    }
++
++    frame2buff(frame, vdev->config);
++
++    virtio_notify_config(vdev);
++
++    return 1;
++}
++
++static void virtio_can_device_unrealize(DeviceState *dev)
++{
++    VirtIODevice *vdev = VIRTIO_DEVICE(dev);
++    VirtIOCan *vcan = VIRTIO_CAN(dev);
++    virtio_del_queue(vdev, 0);
++    g_free(vcan->ctrl_vq);
++    can_bus_remove_client(&vcan->bus_client);
++    virtio_cleanup(vdev);
++}
++
++static CanBusClientInfo can_virtio_bus_client_info = {
++    .can_receive = can_virtio_can_receive,
++    .receive = can_virtio_receive,
++};
++
++static void virtio_can_device_realize(DeviceState *dev, Error **errp)
++{
++    VirtIODevice *vdev = VIRTIO_DEVICE(dev);
++    VirtIOCan *vcan = VIRTIO_CAN(dev);
++    size_t config_size = sizeof(struct virtio_can_config);
++
++    virtio_add_feature(&vcan->host_features, VIRTIO_CAN_F_CTRL_VQ);
++    virtio_init(vdev, "virtio-can", VIRTIO_ID_CAN, config_size);
++
++    vcan->ctrl_vq = virtio_add_queue(vdev, 64, virtio_can_handle_ctrl);
++
++    vcan->bus_client.info = &can_virtio_bus_client_info;
++    can_bus_insert_client(vcan->canbus, &vcan->bus_client);
++}
++
++static void virtio_can_instance_init(Object *obj)
++{
++    VirtIOCan *vcan = VIRTIO_CAN(obj);
++
++    object_property_add_link(obj, "canbus", TYPE_CAN_BUS,
++                             (Object **)&vcan->canbus,
++                             qdev_prop_allow_set_link_before_realize,
++                             0);
++}
++
++static void virtio_can_class_init(ObjectClass *klass, void *data)
++{
++    DeviceClass *dc = DEVICE_CLASS(klass);
++    VirtioDeviceClass *vdc = VIRTIO_DEVICE_CLASS(klass);
++
++    device_class_set_props(dc, virtio_can_properties);
++    dc->vmsd = &vmstate_virtio_can;
++    set_bit(DEVICE_CATEGORY_NETWORK, dc->categories);
++    vdc->realize = virtio_can_device_realize;
++    vdc->unrealize = virtio_can_device_unrealize;
++    vdc->get_config = virtio_can_get_config;
++    vdc->get_features = virtio_can_get_features;
++}
++
++static const TypeInfo virtio_can_info = {
++    .name = TYPE_VIRTIO_CAN,
++    .parent = TYPE_VIRTIO_DEVICE,
++    .instance_size = sizeof(VirtIOCan),
++    .instance_init = virtio_can_instance_init,
++    .class_init = virtio_can_class_init,
++};
++
++static void virtio_register_types(void)
++{
++    type_register_static(&virtio_can_info);
++}
++
++type_init(virtio_register_types)
++
++
++
+diff --git a/hw/virtio/virtio.c b/hw/virtio/virtio.c
+index ceb58fda6c..f26399045f 100644
+--- a/hw/virtio/virtio.c
++++ b/hw/virtio/virtio.c
+@@ -3289,6 +3289,7 @@ bool virtio_legacy_allowed(VirtIODevice *vdev)
+ {
+     switch (vdev->device_id) {
+     case VIRTIO_ID_NET:
++    case VIRTIO_ID_CAN:
+     case VIRTIO_ID_BLOCK:
+     case VIRTIO_ID_CONSOLE:
+     case VIRTIO_ID_RNG:
+diff --git a/include/hw/virtio/virtio-can.h b/include/hw/virtio/virtio-can.h
+new file mode 100644
+index 0000000000..46f20a0b36
+--- /dev/null
++++ b/include/hw/virtio/virtio-can.h
+@@ -0,0 +1,40 @@
++/*
++ * Copyright (c) Huawei Technologies Co., Ltd. 2021-2021. All rights reserved.
++ * Description: virtio-can device
++ * Author: Zhu yaqin <zhuyaqin2@huawei.com>
++ * Create: 2021-06-26
++ * Notes:
++ */
++
++#ifndef QEMU_VIRTIO_NET_H
++#define QEMU_VIRTIO_NET_H
++
++#include "qemu/units.h"
++#include "standard-headers/linux/virtio_can.h"
++#include "hw/virtio/virtio.h"
++#include "net/announce.h"
++#include "qemu/option_int.h"
++#include "qom/object.h"
++#include "net/can_emu.h"
++
++#define TYPE_VIRTIO_CAN "virtio-can-device"
++OBJECT_DECLARE_SIMPLE_TYPE(VirtIOCan, VIRTIO_CAN)
++
++struct VirtIOCan {
++    VirtIODevice parent_obj;
++    VirtQueue *ctrl_vq;
++
++    CanBusState *canbus;
++    CanBusClientState bus_client;
++
++    QLIST_ENTRY(VirtIOCan) next;
++    uint64_t host_features;
++};
++
++ssize_t can_virtio_receive(CanBusClientState *client, const qemu_can_frame *frames,
++                        size_t frames_cnt);
++
++bool can_virtio_can_receive(CanBusClientState *client);
++#endif
++
++
+diff --git a/include/standard-headers/linux/virtio_can.h b/include/standard-headers/linux/virtio_can.h
+new file mode 100644
+index 0000000000..d1477378f9
+--- /dev/null
++++ b/include/standard-headers/linux/virtio_can.h
+@@ -0,0 +1,53 @@
++#ifndef _LINUX_VIRTIO_CAN_H
++#define _LINUX_VIRTIO_CAN_H
++#include "standard-headers/linux/types.h"
++#include "standard-headers/linux/virtio_ids.h"
++#include "standard-headers/linux/virtio_config.h"
++#include "standard-headers/linux/virtio_types.h"
++
++/* The feature bitmap for virtio can */
++#define VIRTIO_CAN_F_CTRL_VQ      0	/* Control channel available */
++#define VIRTIO_CAN_F_CTRL_LINK_UP 1	/* Link is up */
++#define VIRTIO_CAN_F_GUEST_CANFD  10	/* Guest can handle CAN-FD frames */
++#define VIRTIO_CAN_F_HOST_CANFD   20	/* Host can handle CAN-FD frames */
++
++struct virtio_can_config {
++	uint8_t dlc;
++	uint32_t can_id;
++	uint8_t tx_buff[16];
++	uint8_t rx_buff[16];
++} QEMU_PACKED;
++
++/*
++ * Control virtqueue data structures
++ *
++ * The control virtqueue expects a header in the first sg entry
++ * and an ack/status response in the last entry.  Data for the
++ * command goes in between.
++ */
++struct virtio_can_ctrl_hdr {
++	uint8_t class;
++    uint8_t cmd;
++} __attribute__((packed));
++
++typedef uint8_t virtio_can_ctrl_ack;
++
++#define VIRTIO_CAN_OK     0
++#define VIRTIO_CAN_ERR    1
++
++/*
++ * Control CAN chip status
++ *
++ * Execute standard CAN controller management operations on the host system.
++ */
++#define VIRTIO_CAN_CTRL_CHIP    0
++#define VIRTIO_CAN_CTRL_CHIP_ENABLE       0
++#define VIRTIO_CAN_CTRL_CHIP_DISABLE      1
++#define VIRTIO_CAN_CTRL_CHIP_FREEZE       2
++#define VIRTIO_CAN_CTRL_CHIP_UNFREEZE     3
++#define VIRTIO_CAN_CTRL_CHIP_SOFTRESET    4
++
++#define VIRTIO_CAN_CTRL_TX    1
++#define VIRTIO_CAN_CTRL_TX_ENABLE       5
++#endif /* _LINUX_VIRTIO_CAN_H */
++
+diff --git a/include/standard-headers/linux/virtio_ids.h b/include/standard-headers/linux/virtio_ids.h
+index b052355ac7..627c249765 100644
+--- a/include/standard-headers/linux/virtio_ids.h
++++ b/include/standard-headers/linux/virtio_ids.h
+@@ -43,6 +43,7 @@
+ #define VIRTIO_ID_INPUT        18 /* virtio input */
+ #define VIRTIO_ID_VSOCK        19 /* virtio vsock transport */
+ #define VIRTIO_ID_CRYPTO       20 /* virtio crypto */
++#define VIRTIO_ID_CAN          21 /* virtio can */
+ #define VIRTIO_ID_IOMMU        23 /* virtio IOMMU */
+ #define VIRTIO_ID_MEM          24 /* virtio mem */
+ #define VIRTIO_ID_FS           26 /* virtio filesystem */
