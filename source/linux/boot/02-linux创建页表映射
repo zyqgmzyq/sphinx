@@ -1,0 +1,180 @@
+# linux页表映射
+
+为了kernel运行速度加快, 我们需要启动cache, 启动cache需要先启动MMU让CPU运行到虚拟地址上, 那么我们就需要启动一个能覆盖KERNEL内存区域的页表
+
+## __create_page_tables
+
+```c
+/*
+ * Setup the initial page tables. We only setup the barest amount which is
+ * required to get the kernel running. The following sections are required:
+ *   - identity mapping to enable the MMU (low address, TTBR0)
+ *   - first few MB of the kernel linear mapping to jump to once the MMU has
+ *     been enabled
+ */
+__create_page_tables:
+    mov x28, lr
+    /*
+     * Invalidate the idmap and swapper page tables to avoid potential
+     * dirty cache lines being evicted.
+     */
+    adrp    x0, idmap_pg_dir     /* x0保存idmap_pg_dir当前所在的物理地址. */
+    adrp    x1, swapper_pg_end   /* x1保存idmap_pg_dir和swapper_pg_dir的大小. */
+    sub x1, x1, x0
+    bl  __inval_dcache_area      /* 清掉cache */
+    /*
+     * Clear the idmap and swapper page tables. 页表清零。
+     */
+    adrp    x0, idmap_pg_dir
+    adrp    x1, swapper_pg_end
+    sub x1, x1, x0
+1:  stp xzr, xzr, [x0], #16
+    stp xzr, xzr, [x0], #16
+    stp xzr, xzr, [x0], #16
+    stp xzr, xzr, [x0], #16
+    subs    x1, x1, #64
+    b.ne    1b
+    
+    /*
+ 	 * x7保存level3页表的entry的flags, 表明是普通内存,是一个block的entry, 
+	 * 要映射的内存属性，通过一些flags表示这段内存比如共享属性、读写属性、cache一致性、属于内核空间等等
+ 	 */
+    mov x7, SWAPPER_MM_MMUFLAGS    
+	/*
+     * Create the identity mapping. 创建idmap.
+     */
+    adrp    x0, idmap_pg_dir            /* x0保存idmap_pg_dir的物理地址,也就是页表地址 */
+    adrp    x3, __idmap_text_start      /* 线性映射（idmap）的起始物理地址 */
+    /*
+     * VA_BITS may be too small to allow for an ID mapping to be created
+     * that covers system RAM if that is located sufficiently high in the
+     * physical address space. So for the ID map, use an extended virtual
+     * range in that case, and configure an additional translation level
+     * if needed.
+     *
+     * Calculate the maximum allowed value for TCR_EL1.T0SZ so that the
+     * entire ID map region can be mapped. As T0SZ == (64 - #bits used),
+     * this number conveniently equals the number of leading zeroes in
+     * the physical address of __idmap_text_end.
+     */
+    adrp    x5, __idmap_text_end        /* 线性映射（idmap）的结束物理地址 */
+    /* 
+     * CLZ指令返回操作数二进制编码中第一个1前0的个数。
+     * 如果操作数为0，则指令返回32；
+     * 如果操作数二进制编码第31位为1，指令返回0.
+     */
+    clz x5, x5 
+    /* TCR_T0SZ计算给定虚拟地址数目下，前导0的个数。
+     * 如果虚拟地址是48位，那么前导0就是16个，
+     * 如果 x5 存在前导0小于虚拟地址前导0的情况，则表明需要地址扩展
+     * 否则不需要扩展跳转到标号处
+     */
+    cmp x5, TCR_T0SZ(VA_BITS)   /* default T0SZ small enough? */
+    b.ge    1f                  /* then skip VA range extension 不需要扩展跳转到标号处 */
+
+    adr_l   x6, idmap_t0sz      /* x6保存idmap_t0sz变量的物理地址 */
+    str x5, [x6]                /* 将x5前导0的个数存入idmap_t0sz变量中 */
+    dmb sy                      /* 内存屏障 */
+    dc  ivac, x6                /* 使cache无效*/
+
+/* 如果物理地址的位置非常高，比如超过了第43bit的为1 ，
+ * 但是虚拟地址配置的是42bit的，而identity mapping虚拟地址等于物理地址，
+ * 那么就无法表示了，启动虚拟地址扩展，扩展到48位（armv8最高支持），
+ * 增加的一个level叫做EXTRA，EXTRA_SHIFT位PGDIR_SHIFT + PAGE_SHIFT - 3，
+ * EXTRA_SHIFT中的entry数目为1 << (48 - EXTRA_SHIFT)
+ */
+#if (VA_BITS < 48)
+#define EXTRA_SHIFT (PGDIR_SHIFT + PAGE_SHIFT - 3)
+#define EXTRA_PTRS  (1 << (PHYS_MASK_SHIFT - EXTRA_SHIFT))
+    /*
+     * If VA_BITS < 48, we have to configure an additional table level.
+     * First, we have to verify our assumption that the current value of
+     * VA_BITS was chosen such that all translation levels are fully
+     * utilised, and that lowering T0SZ will always result in an additional
+     * translation level to be configured.
+     */
+#if VA_BITS != EXTRA_SHIFT /* kernel要求正确配置情况下这两值必定相等，否则就是配置有问题 */
+#error "Mismatch between VA_BITS and page size/number of translation levels"
+#endif
+    mov x4, EXTRA_PTRS
+    /* 创建extea level的entry，以上部分是地址扩展部分 */
+    create_table_entry x0, x3, EXTRA_SHIFT, x4, x5, x6  
+#else
+    /*
+     * If VA_BITS == 48, we don't have to configure an additional
+     * translation level, but the top-level table has more entries.
+     */
+    mov x4, #1 << (PHYS_MASK_SHIFT - PGDIR_SHIFT)
+    str_l   x4, idmap_ptrs_per_pgd, x5
+#endif
+1:
+    ldr_l   x4, idmap_ptrs_per_pgd      /* 每个pgd有多少个page entry  512个 */
+    mov x5, x3                          // __pa(__idmap_text_start)
+    adr_l   x6, __idmap_text_end        // __pa(__idmap_text_end)
+    /* 创建映射 */
+    map_memory x0, x1, x3, x6, x7, x3, x4, x10, x11, x12, x13, x14
+    /*
+     * Map the kernel image (starting with PHYS_OFFSET).
+     */
+    adrp    x0, swapper_pg_dir              /* x0指向内核地址空间PGD基地址 */
+    mov_q   x5, KIMAGE_VADDR + TEXT_OFFSET  /* x5指向内核image的首地址, compile time __va(_text) */
+    add x5, x5, x23                         /* 添加内核地址空间布局随机化的偏移， x23是在前面保存的 */
+    mov x4, PTRS_PER_PGD
+    adrp    x6, _end            // runtime __pa(_end)    kernel image的结束地址
+    adrp    x3, _text           // runtime __pa(_text)   kernel image的起始地址
+    sub x6, x6, x3          // _end - _text              获得kernel image的size
+    add x6, x6, x5          // runtime __va(_end)        加上随机va_pa的offset，得到kernel image结束地址的va
+    /* 创建映射 */
+    map_memory x0, x1, x5, x6, x7, x3, x4, x10, x11, x12, x13, x14
+```
+
+## idmap_pg_dir和swapper_pg_dir
+
+```c
+. = ALIGN(SZ_4K);				            \
+VMLINUX_SYMBOL(__idmap_text_start) = .;		\
+*(.idmap.text)					            \
+VMLINUX_SYMBOL(__idmap_text_end) = .;
+```
+
+`idmap_pg_dir`对应的页表是用来将与KERNEL所在物理地址相等的虚拟地址映射到相同的物理地址. 从而保证开启MMU时, 不会发生无法获取页表的情况. 而`swapper_pg_dir`如其名是swapper进程运行所需的页表, 是内核初始化过程所用的页表.
+
+另外ARM64有TTBR0, TTBR1(Translation Table Base Register)分别用来指示内核空间和用户空间页表所在的物理地址, 而在这个时候, TTBR0不是用来指示用户空间地址, 而是用来指示与物理地址相等的虚拟地址所用的页表. 所以TTBR0里面是`.idmap.text`的物理地址, TTBR1里面是`swapper_pg_dir`的物理地址.
+
+## create_table_entry
+
+```c
+/*
+ * Macro to create a table entry to the next page.
+ *
+ *	tbl:	page table address
+ *	virt:	virtual address
+ *	shift:	#imm page table shift
+ *	ptrs:	#imm pointers per table page
+ *
+ * Preserves:	virt
+ * Corrupts:	tmp1, tmp2
+ * Returns:	tbl -> next level table page address
+ */
+.macro	create_table_entry, tbl, virt, shift, ptrs, tmp1, tmp2
+	/* 下面两条指令取出虚拟地址(virt)的[shift+9:shift], 作为index */
+	lsr	\tmp1, \virt, #\shift
+	and	\tmp1, \tmp1, #\ptrs - 1	// table index
+	/*
+	 * 下面两条指令计算出这一级页表对应virt的entry的值, 第一条指令计算entry指向的下一级
+	 * 页表的物理地址, 第二条指令指定当前entry是PMD_TYPE_TABLE, 也就是表示当前entry
+     * 指向的仍然是一个页目录, 具体看arm的architecture reference manual.
+	 */
+	add	\tmp2, \tbl, #PAGE_SIZE
+	orr	\tmp2, \tmp2, #PMD_TYPE_TABLE	// address of next table and entry type
+	/*
+	 * 使用之前计算的index来得到virt对应的entry的位置(tbl + index * 8byte), 然后把
+	 * 页表entry存到那个位置
+	 * /
+	str	\tmp2, [\tbl, \tmp1, lsl #3]
+	/* tbl指向下一级页表, 方便下一次计算 */
+	add	\tbl, \tbl, #PAGE_SIZE		   // next level table page
+	.endm
+/* 上述函数创建页表项，并且返回下一个Level的页表地址。 */
+```
+
