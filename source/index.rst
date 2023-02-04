@@ -10,6 +10,7 @@ Note
    :maxdepth: 2
 
    /linux/linux.rst
-   /algo/algo_index.rst
    /qemu/qemu.rst
    /virtio/virtio.rst
+   /weston/weston.rst
+   /algo/algo_index.rst
