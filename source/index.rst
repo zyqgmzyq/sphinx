@@ -9,8 +9,7 @@ Note
 .. toctree::
    :maxdepth: 2
 
+   /linux/linux.rst
    /algo/algo_index.rst
    /qemu/qemu.rst
-   /weston/weston.rst
    /virtio/virtio.rst
-   /virtio-ai/virtio-ai.rst

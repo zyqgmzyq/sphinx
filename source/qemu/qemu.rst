@@ -9,10 +9,6 @@ Qemu
 .. toctree::
    :maxdepth: 2
 
-   00-编译并运行qemu.md
-   01-qemu debug.md
-   02-qemu-virtio-gpu.md
-   03-waypipe.md
-   module_init.md
-   qemu_init.md
+   /environment/envir.rst
+   /init/init.rst
 

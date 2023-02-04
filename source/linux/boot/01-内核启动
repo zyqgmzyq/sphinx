@@ -17,10 +17,10 @@ SECTIONS
 	}
 ```
 
-可以看到入口点在`_text`. 而`_text`是指向`.head.text`段的起始位置. 所以内核是从`.head.text`开始运行的. 那么这个段是写什么内容呢?
+可以看到入口点在`_text`. 而`_text`是指向`.head.text`段的起始位置. 所以内核是从`.head.text`开始运行的. 那么这个段是写什么内容呢? HEAD_TEXT是一个宏
 
 ```c
-HEAD_TEXT`是一个宏`#define HEAD_TEXT *(.head.text)
+#define HEAD_TEXT *(.head.text)
 ```
 
 在`arch/arm64/kernel/head.S`中有
@@ -48,26 +48,28 @@ _head:
 所以对应到code, 内核是从`_head`开始运行的. 这个开始点放置了一个arm64 linux的header:
 
 ```c
-u32 code0;			/* Executable code */
-u32 code1;			/* Executable code */
+u32 code0;			    /* Executable code */
+u32 code1;			    /* Executable code */
 u64 text_offset;		/* Image load offset, little endian */
-u64 image_size;		/* Effective Image size, little endian */
-u64 flags;			/* kernel flags, little endian */
+u64 image_size;		    /* Effective Image size, little endian */
+u64 flags;			    /* kernel flags, little endian */
 u64 res2	= 0;		/* reserved */
 u64 res3	= 0;		/* reserved */
 u64 res4	= 0;		/* reserved */
 u32 magic	= 0x644d5241;	/* Magic number, little endian, "ARM\x64" */
-u32 res5;			/* reserved (used for PE COFF offset) */
+u32 res5;			        /* reserved (used for PE COFF offset) */
 ```
 
-这个头的前两个位置放置的是可执行code
+这个头的前两个位置放置的是可执行code，
 
-在开启UEFI支持时, `add x13, x18, #0x16`这个code实际上是为了满足EFI格式的”MZ”头. 如果使用UEFI来启动kernel, 会识别出来并走UEFI启动的流程, 如果是普通的启动过程如使用uboot的booti进行引导, 那么第一条指令就是一条dummy指令. 第二条就跳转到`stext`运行了.
+在开启UEFI支持时, `add x13, x18, #0x16`这个code实际上是为了满足EFI格式的”MZ”头. 如果使用UEFI来启动kernel, 会识别出来并走UEFI启动的流程,__EFI_PE_HEADER里面有个entrypoint；
+
+ 如果是普通的启动过程如使用uboot的booti进行引导, 那么第一条指令就是一条dummy指令. 第二条就跳转到`stext`运行了.
 
 ```c
 ENTRY(stext)
 	bl	preserve_boot_args
-	bl	el2_setup			// Drop to EL1, w0=cpu_boot_mode
+	bl	el2_setup			            // Drop to EL1, w0=cpu_boot_mode
 	adrp	x23, __PHYS_OFFSET
 	and	x23, x23, MIN_KIMG_ALIGN - 1	// KASLR offset, defaults to 0
 	bl	set_cpu_boot_mode_flag
@@ -91,7 +93,7 @@ ENDPROC(stext)
 
 ```c
 preserve_boot_args:
-	mov	x21, x0				// x21=FDT
+	mov	x21, x0				        // x21=FDT
 
 	adr_l	x0, boot_args			// record the contents of
 	stp	x21, x1, [x0]			    // x0 .. x3 at kernel entry
@@ -105,7 +107,7 @@ preserve_boot_args:
 ENDPROC(preserve_boot_args)
 ```
 
-代码的含义一目了然, 把存fdt内存地址的x0保存到x21寄存器. 然后把启动参数x0, x1, x2, x3全部保存到boot_args数组中.
+代码的含义一目了然, 把存 fdt 内存地址 j 的x0保存到x21寄存器. 然后把启动参数x0, x1, x2, x3全部保存到boot_args数组中.
 
 arm64 linux规定:
 
@@ -127,7 +129,7 @@ arm64 linux规定:
 	.macro	adr_l, dst, sym
 #ifndef MODULE
 	adrp	\dst, \sym
-	add	\dst, \dst, :lo12:\sym
+	add	\dst, \dst, :lo12:\sym  // 表示低12位
 #else
 	movz	\dst, #:abs_g3:\sym
 	movk	\dst, #:abs_g2_nc:\sym
@@ -139,12 +141,13 @@ arm64 linux规定:
 
 可以看到, 这里的`adr_l`拆分成了两条指令, adrp + add, adrp指令最大寻址空间时+-4GB, 但是所寻址的地址是4KB对齐的. 所以这里在加了一个add指令来修正地址的低12bit, 从而实现了这个加载+-4GB任意位置的运行时地址的宏.
 
+adrp指令详见onenote笔记指令-ldr与adr章节
+
 2. `__inval_dcache_area`函数用来invalidate指定区域的dcache, 具体如下
 
 ```c
 ENTRY(__inval_dcache_area)
-	/* FALLTHROUGH */
-
+/* FALLTHROUGH */
 /*
  *	__dma_inv_area(start, size)
  *	- start   - virtual start address of region
@@ -172,7 +175,7 @@ __dma_inv_area:
 ENDPIPROC(__inval_dcache_area)
 ```
 
-可以看到如果指定内存区域有跨越cacheline, 那么对两边跨越了cacheline的地址使用的clean + invalidate, 对于中间区域可以直接invalidate不用写回内存, 从而加快invalidate速度
+可以看到如果指定内存区域有跨越cacheline, 那么对两边跨越了cacheline的地址使用的clean + invalidate, 对于中间区域可以直接invalidate不用写回内存, 从而加快invalidate速度。
 
 ## 设置core的启动状态
 
@@ -180,13 +183,11 @@ ENDPIPROC(__inval_dcache_area)
 
 ```c
 ENTRY(el2_setup)
-	msr	SPsel, #1			// We want to use SP_EL{1,2}
+	msr	SPsel, #1			        // We want to use SP_EL{1,2}
 	mrs	x0, CurrentEL
 	cmp	x0, #CurrentEL_EL2
 	b.eq	1f
-	mrs	x0, sctlr_el1
-CPU_BE(	orr	x0, x0, #(3 << 24)	)	// Set the EE and E0E bits for EL1
-CPU_LE(	bic	x0, x0, #(3 << 24)	)	// Clear the EE and E0E bits for EL1
+    mov_q   x0, (SCTLR_EL1_RES1 | ENDIAN_SET_EL1) 
 	msr	sctlr_el1, x0
 	mov	w0, #BOOT_CPU_MODE_EL1		// This cpu booted in EL1
 	isb
@@ -196,14 +197,20 @@ CPU_LE(	bic	x0, x0, #(3 << 24)	)	// Clear the EE and E0E bits for EL1
 ......省略......
 ```
 
-判断当前core的EL, 如果是EL1, 就设定使用little endian, `CPU_BE`和`CPU_LE`只有一条会编译进code. 之后返回`BOOT_CPU_MODE_EL1`, 如果EL2, 会初始化虚拟化相关的东西, 比较复杂, 先搁着.
+判断当前core的EL, 如果是EL1, 先设置大小端，之后就返回`BOOT_CPU_MODE_EL1`, 如果EL2, 会初始化虚拟化相关的东西, 比较复杂, 先搁着。
+
+## 获取地址随机化偏移
 
 ```c
 adrp	x23, __PHYS_OFFSET
 and	x23, x23, MIN_KIMG_ALIGN - 1	// KASLR offset, defaults to 0
 ```
 
-这段code跟kaslr有关, 我们下篇文章来着重讲这个. 先接着往下看`set_cpu_boot_mode_flag`:
+这段code跟kaslr有关, 我们回头来着重讲这个. 
+
+## set_cpu_boot_mode_flag
+
+先接着往下看`set_cpu_boot_mode_flag`:
 
 ```c
 set_cpu_boot_mode_flag:
@@ -226,6 +233,7 @@ ENTRY(__boot_cpu_mode)
 	.long	BOOT_CPU_MODE_EL1
 ```
 
-这段code的作用就是把保存的这两个值修改为一致, 且为当前CORE的启动EL, 其他CORE启动时也会运行这段code, 这样如果后面的CORE启动到了不同的EL就又会把这两个值修改为不一致, 从而可以判断出CPU的启动状态时不对的.
+这段code的作用就是把保存的这两个值修改为一致, 且为当前CORE的启动EL, 其他CORE启动时也会运行这段code, 这样如果后面的CORE启动到了不同的EL就又会把这两个值修改为不一致, 从而可以判断出CPU的启动状态是不对的.
 
 CPU的启动模式在el2_setup时保存到了w0中，此处将启动模式保存到__boot_cpu_mode中，如果启动模式为EL1则保存到__boot_cpu_mode[0],如果启动模式为EL2，则保存到__boot_cpu_mode[1]。
+

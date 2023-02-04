@@ -5,9 +5,7 @@
 [参考文章](https://www.cnblogs.com/steven_oyj/archive/2010/05/22/1741376.html)
 **回溯算法**实际上一个类似枚举的搜索尝试过程，主要是在搜索尝试过程中寻找问题的解，当发现已不满足求解条件时，就“回溯”返回，尝试别的路径。回溯法是一种选优搜索法，按选优条件向前搜索，以达到目标。但当探索到某一步时，发现原先选择并不优或达不到目标，就退回一步重新选择，这种走不通就退回再走的技术为回溯法，而满足回溯条件的某个状态的点称为“回溯点”。
 
- 许多复杂的，规模较大的问题都可以使用回溯法，有“通用解题方法”的美称。
-
-
+许多复杂的，规模较大的问题都可以使用回溯法，有“通用解题方法”的美称。
 
 ## 二、基本思想
 
@@ -17,15 +15,11 @@
 
 - 而若使用回溯法求任一个解时，只要搜索到问题的一个解就可以结束。
 
-
-
 ## 三、用回溯法解题的一般步骤：
 
 1. 针对所给问题，确定问题的解空间：首先应明确定义问题的解空间，问题的解空间应至少包含问题的一个（最优）解。
 2. 确定结点的扩展搜索规则
 3. 以深度优先方式搜索解空间，并在搜索过程中用剪枝函数避免无效搜索。
-
-
 
 ## 四、算法模板
 
@@ -64,7 +58,7 @@ void dfs(type &input, type &path, type &result, int cur or gap) {
 输入: n = 1
 返回: ["1:00", "2:00", "4:00", "8:00", "0:01", "0:02", "0:04", "0:08", "0:16", "0:32"]
 
-### 回溯法
+#### 回溯法
 这个题目可以归于有多少 n个1的二进制组合。转换为字符串即可。 这里将 0 - 9，划分一下 0 - 3 是 小时， 6 - 9 是分钟计算。
 - 结束条件: num==0且h,m合法
 
@@ -106,7 +100,7 @@ void dfs(type &input, type &path, type &result, int cur or gap) {
   
   
 
-### bitset法
+#### bitset法
 
 
 ```cpp
@@ -184,8 +178,6 @@ class Solution {
   [2, 6],
   [1, 1, 6]]
 
-
-
 #### 回溯法
 和上一题基本相同,唯一需要注意的是每个数字只许使用一次且不能有重复组合.可先对数组排序,保留深度方向上相同的数字（也就是多个重复数字时可用，比如[1,1,1],第一个‘1’使用过后，第二和第三个依然可以使用），剔除水平方向相同的（也就是同一层中相同的枝应该剪掉）。
 
@@ -239,11 +231,7 @@ class Solution {
   [3,1,2],
   [3,2,1]]
 
-
-
 #### 回溯法
-
-![image-20200726110542899](D:%5Csphinx%5Csource%5Calgo%5C04-%E5%9B%9E%E6%BA%AF%E9%97%AE%E9%A2%98.assets%5Cimage-20200726110542899.png)
 
 - 对现有序列 x 进行遍历，拿到每一个遍历值放在当前位上
 - 将该遍历到的值抽离序列 x，生成一个新的序列 y
@@ -285,8 +273,6 @@ public:
 [[1,1,2],
   [1,2,1],
   [2,1,1]]
-
-
 
 
 #### 回溯法
@@ -382,7 +368,6 @@ public:
 ####  题目描述
 给定一组不含重复元素的整数数组 nums，返回该数组所有可能的子集（幂集）。说明：解集不能包含重复的子集。
 
-
 输入: nums = [1,2,3]
 输出:
 [ [3],
@@ -393,8 +378,6 @@ public:
   [2,3],
   [1,2],
   []]
-
-
 
 #### 回溯法
 添加一个数，递归，删除之前的数，下次循环。
@@ -424,7 +407,6 @@ class Solution {
 ####  题目描述
 n 皇后问题研究的是如何将 n 个皇后放置在 n×n 的棋盘上，并且使皇后彼此之间不能相互攻击。给定一个整数 n，返回所有不同的 n 皇后问题的解决方案。每一种解法包含一个明确的 n 皇后问题的棋子放置方案，该方案中 'Q' 和 '.' 分别代表了皇后和空位。
 
-
 输入: 4
 输出: [
  [".Q..",  // 解法 1
@@ -438,8 +420,6 @@ n 皇后问题研究的是如何将 n 个皇后放置在 n×n 的棋盘上，并
   ".Q.."]]
 解释: 4 皇后问题存在两个不同的解法。
 
-
-
 #### 回溯法
 用set记录列, 正对角,负对角是否已经摆放过皇后，如果是则跳过啊！
 
@@ -447,7 +427,7 @@ n 皇后问题研究的是如何将 n 个皇后放置在 n×n 的棋盘上，并
   - 正对角就是相加之和一样的
   - 负对角就是相减只差一样的
 
-
+#### 代码
 
 ```cpp
 class Solution {
@@ -489,9 +469,7 @@ class Solution {
 ####  题目描述
 n 皇后问题研究的是如何将 n 个皇后放置在 n×n 的棋盘上，并且使皇后彼此之间不能相互攻击。给定一个整数 n，返回 n 皇后不同的解决方案的数量。
 
-
-输入: 4
-输出: 2
+输入: 4         输出: 2
 解释: 4 皇后问题存在如下两个不同的解法。
 [[".Q..",  // 解法 1
   "...Q",
@@ -502,8 +480,6 @@ n 皇后问题研究的是如何将 n 个皇后放置在 n×n 的棋盘上，并
   "Q...",
   "...Q",
   ".Q.."]]
-
-
 
 #### 回溯法
 和上一题一样，这里如果满足情况加1即可，比上题简单一些！
@@ -539,8 +515,6 @@ class Solution {
 };
 ```
 
-
-
 ### [9.leetcode17-电话号码的字母组合](https://leetcode-cn.com/problems/letter-combinations-of-a-phone-number) **
 
 #### 题目描述
@@ -557,12 +531,12 @@ class Solution {
     map<char, string> hashmap={{'2', "abc"},{'3', "def"},{'4', "ghi"},{'5', "jkl"},{'6', "mno"},{'7', "pqrs"},{'8', "tuv"},{'9', "wxyz"}};
     public:
     void dfs(vector<string> &res, vector<string> strs, string &s, int n){
-        if(n==strs.size()){
+        if(n == strs.size()){
             res.push_back(s);
             return;
         }
         for(int i=0;i<strs[n].size();i++){
-            s+=strs[n][i];
+            s += strs[n][i];
             dfs(res, strs, s, n+1);
             s.pop_back();
         }
@@ -578,22 +552,17 @@ class Solution {
         return res;
     }
 };
-
 ```
-
-
 
 ### [10.leetcode22-括号生成](https://leetcode-cn.com/problems/generate-parentheses) **
 
 ####  题目描述
 给出 n 代表生成括号的对数，请你写出一个函数，使其能够生成所有可能的并且有效的括号组合。例如，给出 n = 3，生成结果为：
-[
-  "((()))",
+["((()))",
   "(()())",
   "(())()",
   "()(())",
-  "()()()"
-]
+  "()()()"]
 
 
 #### 代码
@@ -608,7 +577,6 @@ public:
         }
         dfs(res, temp+"(", left+1, right, n);
         dfs(res, temp+")", left, right+1, n);
-
     }
 
     vector<string> generateParenthesis(int n) {
@@ -628,14 +596,12 @@ public:
 
 输入: n = 4, k = 2
 输出:
-[
-  [2,4],
+[[2,4],
   [3,4],
   [2,3],
   [1,2],
   [1,3],
-  [1,4],
-]
+  [1,4],]
 
 #### 代码
 ```cpp
@@ -669,3 +635,75 @@ public:
 };
 ```
 
+### [12. leetcode-37 解数独](https://leetcode-cn.com/problems/sudoku-solver)  ***
+
+#### 题目描述
+编写一个程序，通过填充空格来解决数独问题。
+
+一个数独的解法需遵循如下规则：
+
+数字 1-9 在每一行只能出现一次。
+数字 1-9 在每一列只能出现一次。
+数字 1-9 在每一个以粗实线分隔的 3x3 宫内只能出现一次。
+空白格用 '.' 表示。
+
+#### 解题思路
+[参考](https://leetcode-cn.com/problems/sudoku-solver/solution/37-jie-shu-du-hui-su-sou-suo-suan-fa-xiang-jie-by-/i)
+
+#### 代码
+
+```c++
+class Solution {
+public:
+    void solveSudoku(vector<vector<char>> &board)
+    {
+        solvesudokuDFS(board, 0, 0);
+    }
+
+     bool solvesudokuDFS(vector<vector<char>> &board, int i, int j)
+    {
+        if (i == 9) {
+            return true;
+        }
+        if (j >= 9) {
+            return solvesudokuDFS(board, i + 1, 0);
+        }
+        if (board[i][j] == '.') {
+            for (int k = 1; k <= 9; ++k) {
+                board[i][j] = (char)k + '0';
+                if (isvalid(board, i, j)) {
+                    if (solvesudokuDFS(board, i, j + 1)) {
+                        return true;
+                    }
+                }
+                board[i][j] = '.';
+            }
+        } else {
+            return solvesudokuDFS(board, i, j + 1);
+        }
+        return false;
+    }
+
+    bool isvalid (vector<vector<char> >&board, int i, int j)
+    {
+        for (int col = 0; col < 9; ++col) {
+            if ((col != j) && (board[i][j] == board[i][col])) {
+                return false;
+            }
+        }
+        for (int row = 0; row < 9; ++row) {
+            if ((row != i) && (board[i][j] == board[row][j])) {
+                return false;
+            }
+        }
+        for (int l = i / 3 * 3; l < i / 3 * 3 + 3; ++l) {
+            for (int m = j / 3 * 3; m < j / 3 * 3 + 3; ++m) {
+                if ((l != i) && (m != j) && (board[i][j] == board[l][m])) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+};
+```

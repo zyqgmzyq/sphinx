@@ -4,11 +4,11 @@
 __primary_switch:
 #ifdef CONFIG_RANDOMIZE_BASE
 	/*
-	 * 保存x0(开启MMU时需要写入sctlr_el1的值, 保存sctlr_el1的当前值
+	 * 保存x0(开启MMU时需要写入sctlr_el1的值, 保存sctlr_el1的当前值)
 	 * 这两条汇编的作用是为了在开启MMU, 内核发现运行地址和链接地址是一致的时候再次关闭
 	 * MMU, 然后通过获取设备树的`kaslr-seed`来将内核移动到一个随机地址运行, 当然如果
 	 * 设备树没有`kaslr-seed`或者command line指定了`nokaslr`则就不启动kaslr(也就
-	 * 不用返回重启MMU, 重新建立页表了
+	 * 不用返回重启MMU, 重新建立页表了)
 	 */
 	mov	x19, x0			      	// preserve new SCTLR_EL1 value
 	mrs	x20, sctlr_el1			// preserve old SCTLR_EL1 value
@@ -38,17 +38,18 @@ __primary_switch:
 	 * 位置, 因此内核的页表, 符号都需要重新进行设定. 所以下面的code关闭MMU, 重建页表,
 	 * 修复内核符号, 再次跳入__primary_switched
 	 */
-	msr	sctlr_el1, x20			// disable the MMU
+	pre_disable_mmu_workaround
+	msr	sctlr_el1, x20			    // disable the MMU
 	isb
 	bl	__create_page_tables		// recreate kernel mapping
 
-	tlbi	vmalle1				// Remove any stale TLB entries
+	tlbi	vmalle1				    // Remove any stale TLB entries
 	dsb	nsh
 
-	msr	sctlr_el1, x19			// re-enable the MMU
+	msr	sctlr_el1, x19			    // re-enable the MMU
 	isb
-	ic	iallu				// flush instructions fetched
-	dsb	nsh				// via old mapping
+	ic	iallu				        // flush instructions fetched
+	dsb	nsh				            // via old mapping
 	isb
 
 	bl	__relocate_kernel

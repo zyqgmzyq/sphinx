@@ -2,13 +2,11 @@
 
 相信一些细心的读者有注意到, 到目前位置, 内核仍然在低地址段运行, 虽然我们已经启动了MMU, 但是仍然运行在等于物理地址的虚拟地址上, 下面我们就要正式的切换到内核态的高地址空间来运行.
 
-```
+```c
 ldr	x8, =__primary_switched
 adrp	x0, __PHYS_OFFSET
 blr	x8
 ```
-
-
 
 这段code是上篇遗留的一点内容, 现在来进行分析. 第一条指令是arm的伪指令, 将`__primary_switched`标签的链接地址放在x8中, 第二条将`__PHYS_OFFSET`对应的运行时地址存在在x0中, `__PHYS_OFFSET`虽然名字有PHYS, 但是实际他是指`_text - TEXT_OFFSET`的链接地址. 它等于0xffff_0000_0000_0000 + 128M(module) + kaslr, 那现在x0存放的应该就是 DDR起始地址 + 2M align预留内存 + kaslr, 然后跳转到x8执行
 
@@ -16,7 +14,7 @@ blr	x8
 
 第一条指令实际上变汇编成一条指令加一个内存池, 如:
 
-```
+```c
 	ldr x8 __priary_switched_addr
 __priary_switched_addr:
 	0xffff_xxxx_xxxx_xxxx(也就是__primary_switched的链接地址)
@@ -45,7 +43,7 @@ __primary_switched:
 	adr_l	x5, init_task
 	msr	sp_el0, x5			// Save thread_info
 
-	/* 初始化内核的异常向量表, 关于向量表的泪容后续还会在分析 */
+	/* 初始化内核的异常向量表, 关于向量表的内容后续还会在分析 */
 	adr_l	x8, vectors			// load VBAR_EL1 with virtual
 	msr	vbar_el1, x8			// vector table address
 	isb
@@ -72,8 +70,8 @@ __primary_switched:
 	 * kimage_voffset中.
 	 */
 	ldr_l	x4, kimage_vaddr		// Save the offset between
-	sub	x4, x4, x0			// the kernel virtual and
-	str_l	x4, kimage_voffset, x5		// physical mappings
+	sub	x4, x4, x0			        // the kernel virtual and
+	str_l	x4, kimage_voffset, x5	// physical mappings
 
 	// Clear BSS
 	adr_l	x0, __bss_start
@@ -98,12 +96,12 @@ __primary_switched:
 	 */
 	tst	x23, ~(MIN_KIMG_ALIGN - 1)	// already running randomized?
 	b.ne	0f
-	mov	x0, x21				// pass FDT address in x0
+	mov	x0, x21				    // pass FDT address in x0
 	bl	kaslr_early_init		// parse FDT for KASLR options
-	cbz	x0, 0f				// KASLR disabled? just proceed
+	cbz	x0, 0f				    // KASLR disabled? just proceed
 	orr	x23, x23, x0			// record KASLR offset
 	ldp	x29, x30, [sp], #16		// we must enable KASLR, return
-	ret					// to __primary_switch()
+	ret					        // to __primary_switch()
 0:
 #endif
 	/*
