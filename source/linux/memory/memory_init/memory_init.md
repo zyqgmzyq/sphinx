@@ -145,9 +145,9 @@ struct memblock memblock __initdata_memblock = {
 
 假如现在需要移除掉一片区域，而该区域跨越了多个`region`，则会先调用`memblock_isolate_range`来对这片区域进行切分，最后再调用`memblock_remove_region`对区域范围内的`region`进行移除操作。
 
-当调用`memblock_alloc`函数进行地址分配时，最后也是调用`memblock_add_range`来实现的，申请的这部分内存最终会添加到`reserved`类型中，毕竟已经分配出去了，其他人也不应该使用了。
+当调用`memblock_alloc`函数进行地址分配时，最后也是调用`memblock_add_range`来实现的，申请的这部分内存最终会添加到`reserved`类型中，**毕竟已经分配出去了**，其他人也不应该使用了。
 
-# 5. arm64_memblock_init
+## 5. arm64_memblock_init
 
 当物理内存都添加进系统之后，`arm64_memblock_init`会对整个物理内存进行整理，主要的工作就是将一些特殊的区域添加进`reserved`内存中。函数执行完后，如下图所示：
 ![img](https://img2018.cnblogs.com/blog/1771657/201908/1771657-20190831231053115-543452290.png)

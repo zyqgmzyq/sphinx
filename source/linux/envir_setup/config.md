@@ -1,3 +1,20 @@
+# Config
+
+## 常用命令
+
+设置文件为linux格式
+
+```
+:set ff=unix
+```
+
+kangfast
+
+```c
+hellokingssr@gmail.com  // 客服邮箱
+kingfast.info           //网址
+```
+
 ## 创建用户
 
 ```shell
@@ -20,6 +37,41 @@ Error：configure: error: could not configure X
 解决：sudo apt-get install libxt-dev
 sudo apt-get install libgtk2.0-dev
 rm -rf src/auto/config.cache
+
+Error: no terminal library found
+checking for tgetent()... configure: error: NOT FOUND!
+      You need to install a terminal library; for example ncurses.
+      On Linux that would be the libncurses-dev package.
+      Or specify the name of the library with --with-tlib.
+
+解决：  sudo apt install -y libncurses5-dev
+
+
+
+vim --version | grep python3发现没有python3
+
+解决：
+
+```c
+sudo apt-get install python3-dev
+rm /usr/bin/python
+ln -s /usr/bin/python3.6 /usr/bin/python // 生成python3的软链接到环境变量
+```
+
+
+
+wsl中发现还是没有办法复制到粘贴板
+
+解决：在配置文件中加入以下
+
+```
+if system('uname -r') =~ "Microsoft"
+    augroup Yank
+        autocmd!
+        autocmd TextYankPost * :call system('/mnt/c/windows/system32/clip.exe ',@")
+        augroup END
+endif
+```
 
 ## samba配置
 

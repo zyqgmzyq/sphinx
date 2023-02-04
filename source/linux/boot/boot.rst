@@ -3,15 +3,14 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Note
+boot
 ======================================
 
 .. toctree::
-   :maxdepth: 2
 
-   ./boot_kernel.rst
-   ./create_pgtable.rst
-   ./cpu_init.rst
-   ./primary_switched.rst
-   ./kalsr.rst
-   ./start_kernel.rst
+   boot_kernel.rst
+   create_pgtable.rst
+   cpu_init.rst
+   primary_switched.rst
+   kalsr.rst
+   start_kernel.rst

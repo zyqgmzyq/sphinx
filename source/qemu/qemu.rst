@@ -9,6 +9,6 @@ Qemu
 .. toctree::
    :maxdepth: 2
 
-   /environment/envir.rst
-   /init/init.rst
+   ./environment/envir.rst
+   ./init/init.rst
 

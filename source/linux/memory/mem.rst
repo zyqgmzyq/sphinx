@@ -3,15 +3,15 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Note
+memory 
 ======================================
 
 .. toctree::
    :maxdepth: 2
 
-   /memory_init/mem_init.rst
-   /zone/zone.rst
-   /page_alloc/page_alloc.rst
-   /vma/vma.rst
-   /lru/lru.rst
-   /swap/swap.rst
+   ./memory_init/mem_init.rst
+   ./zone/zone.rst
+   ./page_alloc/page_alloc.rst
+   ./vma/vma.rst
+   ./lru/lru.rst
+   ./swap/swap.rst
