@@ -246,7 +246,7 @@ VMLINUX_SYMBOL(__idmap_text_end) = .;
 
 **另外ARM64有TTBR0, TTBR1(Translation Table Base Register)分别用来指示内核空间和用户空间页表所在的物理地址, 而在这个时候, TTBR0不是用来指示用户空间地址, 而是用来指示与物理地址相等的虚拟地址所用的页表. 所以TTBR0里面是`.idmap.text`的物理地址, TTBR1里面是`swapper_pg_dir`的物理地址.**
 
-![image-20220904120308604](D:\work\sphinx-master\source\linux\boot\figs\02-linux创建页表映射.assets\image-20220904120308604.png)
+![image-20230204163437715](D:\wsl\rootfs\root\work\sphinx\source\linux\boot\figs\image-20230204163437715.png)
 
 下面结合kernel img的映射分析一下map_memory是如何做到的：
 
@@ -267,7 +267,7 @@ VMLINUX_SYMBOL(__idmap_text_end) = .;
 
 由于后面kernel会自己重新再建立页表，所以这里采用的映射比较粗糙，在level2 table里使用的是Block descriptor，每个block descriptor可以映射2MB物理地址，这样只需要3个页来就可以放下用于映射kernel镜像的table（level0、level1和level2），如下图：
 
-![image-20220904121057267](D:\work\sphinx-master\source\linux\boot\figs\02-linux创建页表映射.assets\image-20220904121057267.png)
+![image-20230204163508756](D:\wsl\rootfs\root\work\sphinx\source\linux\boot\figs\image-20230204163508756.png)
 
 上面的map_memory就负责建立上图中level0到level2的数据结构关系，没有用到level3
 

@@ -3,13 +3,13 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Weston
+Note
 ======================================
 
 .. toctree::
    :maxdepth: 2
 
-   00-initial_weston.md
-   01-wayland_protocols.md
-   02-rendering.md
-
+   /envir_setup/envir.rst
+   /boot/boot.rst
+   /memory/mem.rst
+   /process/pro.rst
