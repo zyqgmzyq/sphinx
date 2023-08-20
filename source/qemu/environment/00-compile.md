@@ -22,10 +22,22 @@ make CROSS_COMPILE=aarch64-linux-gnu- -j8
 ```shell
 qemu-system-aarch64 -machine its,gic-version=3,iommu=smmuv3,virtualization=true,type=virt  \
 	-cpu cortex-a72 -m 4G -smp 8  \
-	-kernel Image -nographic  \
-	-initrd rootfs.img.gz  \
+	-kernel arch/arm64/boot/Image -nographic  \
+	-initrd rootfs.img  \
 	-append "rw root=/dev/ram rdinit=/sbin/init earlyprintk=serial,ttyAMA0 console=ttyAMA0"  \
 	-chardev socket,id=qemu-monitor,host=localhost,port=7777,server=on,wait=off,telnet=on -mon qemu-monitor,mode=readline
+```
+
+```shell
+qemu-system-aarch64 \                                                                                       
+        -machine virt,virtualization=true,gic-version=3 \
+        -nographic \
+        -m size=1024M \
+        -cpu cortex-a72 \
+        -smp 4 \
+        -kernel arch/arm64/boot/Image \
+        -initrd rootfs.img \
+        --append "console=ttyAMA0 r"
 ```
 
 增加虚拟设备磁盘，先使用initrd作为临时文件系统然后再mount磁盘

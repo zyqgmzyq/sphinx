@@ -124,9 +124,11 @@ __create_page_tables:
     /* 创建idmap的映射  
      * 参数：idmap页表地址
      *		x1表示啥？
-     *      idmap物理起始地址
-     *		idmap物理结束地址
+     *      idmap虚拟起始地址
+     *		idmap虚拟结束地址
      *      页表entry的属性
+     *      idmap物理起始地址
+     *      pgd entry的个数
      */
     map_memory x0, x1, x3, x6, x7, x3, x4, x10, x11, x12, x13, x14
     /*

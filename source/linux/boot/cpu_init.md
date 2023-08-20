@@ -1,3 +1,5 @@
+# cpu_setup
+
 接下来进入`__cpu_setup`函数
 
 ```c

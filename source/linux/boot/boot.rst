@@ -7,10 +7,11 @@ boot
 ======================================
 
 .. toctree::
+   :maxdepth: 2
 
-   boot_kernel.rst
-   create_pgtable.rst
-   cpu_init.rst
-   primary_switched.rst
-   kalsr.rst
-   start_kernel.rst
+   boot_kernel.md
+   create_pgtable.md
+   cpu_init.md
+   primary_switched.md
+   kalsr.md
+   start_kernel.md
