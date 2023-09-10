@@ -9,6 +9,12 @@ Algo
 .. toctree::
    :maxdepth: 2
 
+   00-common_algo.md
+   01-typical_problem.md
+   02-sum_of_numbers.md
+   03-binary_search_algorithm.md
+   04-sorting_algorithm.md
+   05-backtracking_algorithm.md
    01-几数之和.md
    02-二分查找.md
    03-排序算法.md
