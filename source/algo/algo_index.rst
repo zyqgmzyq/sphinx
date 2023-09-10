@@ -15,12 +15,8 @@ Algo
    03-binary_search_algorithm.md
    04-sorting_algorithm.md
    05-backtracking_algorithm.md
-   01-几数之和.md
-   02-二分查找.md
-   03-排序算法.md
-   04-回溯问题.md
-   05-DFS和BFS.md
-   06-树.md
+   06-dfs_bfs.md
+   07-tree.md
    07-链表.md
    08-双指针.md
    09-滑动窗口.md

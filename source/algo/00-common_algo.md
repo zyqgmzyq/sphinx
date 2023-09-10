@@ -1,3 +1,5 @@
+# 常用算法
+
 ## 最大公约数（greatest common divisor）
 
 ```c
@@ -29,7 +31,7 @@ int lcm(int a, int b) {
 
 ```c
 /* 查找[first, last)区域中第一个大于 val 的元素的迭代器 */
-upper_bound(nums.begin(), nums.end(), val);
+auto it = upper_bound(nums.begin(), nums.end(), val);
 if (it != nums.end())
 {
 	ret = *it;
