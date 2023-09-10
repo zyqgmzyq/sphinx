@@ -7,6 +7,10 @@
 
 ## __create_page_tables
 
+在idmap_pg区域为kernel创建恒等映射，在init_pg区域为kernel创建映射，这两块区域都位于vmlinux的data段，执行完__create_page_tables后得到地址映射关系如下：
+
+![在这里插入图片描述](https://img-blog.csdnimg.cn/3ca9f5fc4bd945948854026010c103e5.png?x-oss-process=image/watermark,type_d3F5LXplbmhlaQ,shadow_50,text_Q1NETiBASFplcm8uY2hlbg==,size_20,color_FFFFFF,t_70,g_se,x_16)
+
 ```c
 /*
  * Setup the initial page tables. We only setup the barest amount which is
